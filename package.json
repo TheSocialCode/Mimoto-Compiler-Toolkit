@@ -1,6 +1,6 @@
 {
     "name": "mimoto",
-    "version": "1.0.2",
+    "version": "1.0.0",
     "description": "Concatenate HTML files from watched folders",
     "mainARCHIVE": "index.js",
     "main": "cli.js",

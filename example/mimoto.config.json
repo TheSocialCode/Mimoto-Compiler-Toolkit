@@ -1,0 +1,8 @@
+{
+    "combine": {
+        "source": [
+            "src"
+        ],
+        "output": "output/CombinedTemplates.html"
+    }
+}
