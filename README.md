@@ -11,7 +11,7 @@ Place a config file named "mimoto.config.json" in the root of your project
 ```
 {
     "combine": {
-        "source": [
+        "sources": [
             "src"
         ],
         "output": "output/CombinedTemplates.html"
