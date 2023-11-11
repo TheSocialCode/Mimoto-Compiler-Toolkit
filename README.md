@@ -7,7 +7,7 @@ npm install mimoto
 ```
 
 # Config
-Place a config file named "mimoto.config.json" in the root of your project
+Place a config file named **mimoto.config.json** in the root of your project
 ```
 {
     "combine": {
