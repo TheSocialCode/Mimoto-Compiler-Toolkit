@@ -7,11 +7,12 @@ npm install mimoto
 ```
 
 # Config
-Place a config file named "mimoto.config.json" in the root of your project
+Place a config file named **mimoto.config.json** in the root of your project
 ```
 {
+    // combine multiple .html files into one file
     "combine": {
-        "source": [
+        "sources": [
             "src"
         ],
         "output": "output/CombinedTemplates.html"
