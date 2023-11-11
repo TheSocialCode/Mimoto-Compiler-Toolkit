@@ -1,0 +1,8 @@
+node_modules
+.firebase
+**/.DS_Store
+.idea
+functions/config
+functions/src_clone
+*-debug.log
+public/static/js/thesocialcode
