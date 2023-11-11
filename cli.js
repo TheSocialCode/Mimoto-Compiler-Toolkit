@@ -1,29 +1,45 @@
 #!/usr/bin/env node
-const yargs = require('yargs/yargs');
-const { hideBin } = require('yargs/helpers');
-const { concatenateHtmlFiles } = require('./index'); // Assuming your function is exported from index.js
+const chokidar = require('chokidar');
+const fs = require('fs');
+const path = require('path');
 
-const argv = yargs(hideBin(process.argv))
-    .usage('Usage: $0 [options]')
-    .option('f', {
-        alias: 'folders',
-        describe: 'Folders to watch',
-        type: 'array',
-        demandOption: true
-    })
-    .option('o', {
-        alias: 'output',
-        describe: 'Output file name',
-        type: 'string',
-        demandOption: true
-    })
-    .help('h')
-    .alias('h', 'help')
-    .argv;
 
-// Using the arguments from the CLI
-const watchFolders = argv.folders;
-const outputFile = argv.output;
+const config = require('mimoto.config.json');
 
-// Call your main function with CLI arguments
-concatenateHtmlFiles(watchFolders, outputFile);
+console.log('config =', config);
+
+
+// Configuration
+const config = {
+    watchFolders: ['./folder1', './folder2'], // These are the folders you want to watch
+    outputFile: 'combined.html' // The file where all HTML will be concatenated
+};
+
+// Function to concatenate HTML files
+function concatenateHtmlFiles(folderPaths) {
+    let combinedHtml = '';
+
+    folderPaths.forEach(folder => {
+        fs.readdirSync(folder).forEach(file => {
+            if (path.extname(file) === '.html') {
+                const filePath = path.join(folder, file);
+                combinedHtml += fs.readFileSync(filePath, 'utf8');
+            }
+        });
+    });
+
+    fs.writeFileSync(config.outputFile, combinedHtml);
+    console.log(`Updated ${config.outputFile}`);
+}
+
+// Initial concatenation
+concatenateHtmlFiles(config.watchFolders);
+
+// Watching for file changes
+chokidar.watch(config.watchFolders, {
+    ignored: /(^|[\/\\])\../, // ignore dotfiles
+    persistent: true
+}).on('all', (event, path) => {
+    console.log(`File ${path} has been ${event}`);
+    concatenateHtmlFiles(config.watchFolders);
+});
