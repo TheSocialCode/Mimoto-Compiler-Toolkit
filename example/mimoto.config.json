@@ -1,6 +1,6 @@
 {
     "combine": {
-        "source": [
+        "sources": [
             "src"
         ],
         "output": "output/CombinedTemplates.html"

@@ -35,10 +35,10 @@ function loadConfig() {
 const config = loadConfig();
 
 // 3. validate config file
-if (!config.combine || !config.combine.source)
+if (!config.combine || !config.combine.sources)
 {
     // a. report error
-    console.log('🚨 - WARNING - Please add source folders to \u001b[1m\u001B[31mcombine.source = []\u001B[0m\u001b[22m in mimoto.config.json');
+    console.log('🚨 - WARNING - Please add source folders to \u001b[1m\u001B[31mcombine.sources = []\u001B[0m\u001b[22m in mimoto.config.json');
 
     // b. exit
     process.exit(1);
@@ -91,7 +91,7 @@ function concatenateHtmlFiles(bRebuild = false)
     let combinedHtml = [];
 
     // 4. read
-    config.combine.source.forEach(folder => readHtmlFiles(folder, combinedHtml));
+    config.combine.sources.forEach(folder => readHtmlFiles(folder, combinedHtml));
 
     try
     {
@@ -118,7 +118,7 @@ function concatenateHtmlFiles(bRebuild = false)
 let bInitialBuild = true;
 
 // 6. watch file changes
-chokidar.watch(config.combine.source, {
+chokidar.watch(config.combine.sources, {
     ignored: /(^|[\/\\])\../, // ignore dotfiles
     persistent: true
 }).on('all', (event, path) => {
