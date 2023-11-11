@@ -24,3 +24,9 @@ Place a config file named **mimoto.config.json** in the root of your project
 ```
 npx mimoto
 ```
+
+# During development
+Go into the **/examples** folder and run:
+``` 
+node ../cli.js
+```
