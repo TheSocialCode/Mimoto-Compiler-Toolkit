@@ -9,6 +9,9 @@ const chokidar = require('chokidar');
 const fs = require('fs');
 const path = require('path');
 
+// 2. import Mimoto classes
+const MimotoFirebaseUtils = require('@thesocialcode/mimoto-firebase-toolkit/src/MimotoFirebaseUtils');
+
 /**
  * Load configuration file mimoto.config.json
  */
@@ -107,11 +110,14 @@ function concatenateHtmlFiles(bRebuild = false)
     }
 
     // 7. register
-    let end = new Date().getTime();
+    let end = new Date();
 
-    // 8. output result
-    console.log('---------------------------------------------------------------------------------------------');
-    console.log(`🥦 - Compile done in ${end - start}ms - ` + new Date().toString() + '\n');
+    // 8. compose
+    const sTimestampDone = end.getFullYear() + '.' + MimotoFirebaseUtils.addLeadingZeros(end.getMonth() + 1, 2) + '.' + MimotoFirebaseUtils.addLeadingZeros(end.getDate(), 2) + ' ' + MimotoFirebaseUtils.addLeadingZeros(end.getHours(), 2) + ':' + MimotoFirebaseUtils.addLeadingZeros(end.getMinutes(), 2) + ':' + MimotoFirebaseUtils.addLeadingZeros(end.getSeconds(), 2);
+
+    // 9. output result
+    console.log('----------------------------------------------');
+    console.log(`🥦 - Compile done in ${end.getTime() - start}ms - \u001b[1m` + sTimestampDone + '\u001b[22m\n');
 }
 
 // 5. init

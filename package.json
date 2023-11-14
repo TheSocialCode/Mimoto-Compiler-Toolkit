@@ -1,6 +1,6 @@
 {
     "name": "mimoto",
-    "version": "1.0.8",
+    "version": "1.0.9",
     "description": "Concatenate HTML files from watched folders",
     "mainARCHIVE": "index.js",
     "main": "cli.js",
@@ -11,9 +11,9 @@
         "mimoto": "cli.js"
     },
     "dependencies": {
+        "@thesocialcode/mimoto-firebase-toolkit": "^1.0.0",
         "chokidar": "^3.5.3"
     },
-    "devDependencies": {},
     "repository": {
         "type": "git",
         "url": "git+https://github.com/TheSocialCode/Mimoto-Compiler-Toolkit.git"
