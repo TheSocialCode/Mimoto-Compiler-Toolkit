@@ -4,5 +4,14 @@
             "src"
         ],
         "output": "output/CombinedTemplates.html"
+    },
+    "components": {
+        "mimoto": [
+            "v1/CofirmDialog",
+            "LayoutX"
+        ],
+        "reference to other package in node modules": [
+            "v1/Dialog"
+        ]
     }
 }

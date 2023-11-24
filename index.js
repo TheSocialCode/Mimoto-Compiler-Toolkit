@@ -8,6 +8,8 @@
 const chokidar = require('chokidar');
 const fs = require('fs');
 const path = require('path');
+const { JSDOM } = require('jsdom');
+
 
 // 2. import Mimoto classes
 const MimotoFirebaseUtils = require('@thesocialcode/mimoto-firebase-toolkit/src/MimotoFirebaseUtils');
@@ -34,6 +36,63 @@ function loadConfig() {
     }
 }
 
+/**
+ * Load component
+ */
+function loadComponent(sPackageName, sComponentName)
+{
+    console.log('');
+    console.log('🐰 - sPackageName =', sPackageName);
+
+    try {
+
+
+        // check if dirname of root of project is 'mimoto', otherwise in DEV mode so load 'mimoto' package locally
+
+        const sPackagedirectory = path.join(__dirname, '/node_modules/' + sPackageName);
+
+        console.log('Package dir = ', sPackagedirectory);
+
+
+
+// Replace this with the actual directory path
+//         const directoryPath = 'path/to/your/directory';
+
+        // const parentDirectory = path.dirname(directoryPath);
+        // const isNodeModules = path.basename(parentDirectory) === 'node_modules';
+        // const isNodeModules = parentDirectory === __dirname;
+
+        // console.log(isNodeModules ? 'Parent directory is node_modules' : 'Parent directory is not node_modules');
+
+
+
+
+        if (fs.existsSync(sPackagedirectory))
+        {
+            console.log('Folder exists.');
+        } else {
+            console.log('Folder does not exist.');
+        }
+
+
+        // a. point to the directory where the script is executed, not where it is located
+        // const configFile = path.join(process.cwd(), 'mimoto.config.json');
+
+        // b. send file contents
+        // return JSON.parse(fs.readFileSync(configFile, 'utf8'));
+
+    } catch(error) {
+
+        // a. report error
+        console.log('🚨 - WARNING - Node package node found');
+
+        // b. exit
+        process.exit(1);
+    }
+}
+
+
+
 // 2. load
 const config = loadConfig();
 
@@ -56,6 +115,20 @@ if (!config.combine || !config.combine.output)
     // b. exit
     process.exit(1);
 }
+
+
+
+
+if (config.components && Object.keys(config.components).length > 0)
+{
+    Object.keys(config.components).forEach(sPackageName => {
+
+        loadComponent(sPackageName, config.components[sPackageName]);
+
+    });
+}
+
+
 
 
 /**
@@ -98,8 +171,37 @@ function concatenateHtmlFiles(bRebuild = false)
 
     try
     {
+        let sHTML = combinedHtml.join('\n')
+
+
         // 5. write
-        fs.writeFileSync(config.combine.output, combinedHtml.join('\n'));
+        fs.writeFileSync(config.combine.output, sHTML);
+
+
+
+
+
+
+        const dom = new JSDOM(sHTML);
+        const document = dom.window.document;
+
+        let aInstructions = {};
+
+        const elements = document.querySelectorAll('*');
+        elements.forEach(el => {
+            Array.from(el.attributes).forEach(attr => {
+                if (attr.name.startsWith('data-mimoto-')) {
+
+                    aInstructions[attr.name] = true;
+
+                    console.log(`Element: ${el.tagName}, Attribute: ${attr.name}, Value: ${attr.value}`);
+                }
+            });
+        });
+
+        console.log('instruction =', aInstructions);
+
+
     }
     catch (error)
     {

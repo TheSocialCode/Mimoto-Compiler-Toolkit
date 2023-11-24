@@ -1,7 +1,9 @@
 {
     "name": "mimoto",
-    "version": "1.0.9",
+    "version": "1.0.10",
     "description": "Concatenate HTML files from watched folders",
+    "license": "MIT",
+    "author": "Sebastian Kersten (sebastian@thesocialcode.com)",
     "mainARCHIVE": "index.js",
     "main": "cli.js",
     "scripts": {
@@ -12,14 +14,13 @@
     },
     "dependencies": {
         "@thesocialcode/mimoto-firebase-toolkit": "^1.0.0",
-        "chokidar": "^3.5.3"
+        "chokidar": "^3.5.3",
+        "jsdom": "^22.1.0"
     },
     "repository": {
         "type": "git",
         "url": "git+https://github.com/TheSocialCode/Mimoto-Compiler-Toolkit.git"
     },
-    "author": "Sebastian Kersten (sebastian@thesocialcode.com)",
-    "license": "MIT",
     "bugs": {
         "url": "https://github.com/TheSocialCode/Mimoto-Compiler-Toolkit/issues"
     },
