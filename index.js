@@ -10,9 +10,25 @@ const fs = require('fs');
 const path = require('path');
 const { JSDOM } = require('jsdom');
 
-
 // 2. import Mimoto classes
 const MimotoFirebaseUtils = require('@thesocialcode/mimoto-firebase-toolkit/src/MimotoFirebaseUtils');
+
+
+// --- init
+
+
+// 3. get root directory
+let sRootDir = '';
+const args = process.argv.slice(2); // Removes the first two default elements
+args.forEach((val, index) => { if (val === '-root') { sRootDir = args[index + 1]; } });
+const RUNTIME_ROOT = path.join(process.cwd(), sRootDir);
+
+
+console.log('RUNTIME_ROOT =', RUNTIME_ROOT);
+
+
+
+
 
 /**
  * Load configuration file mimoto.config.json
@@ -21,7 +37,7 @@ function loadConfig() {
     try {
 
         // a. point to the directory where the script is executed, not where it is located
-        const configFile = path.join(process.cwd(), 'mimoto.config.json');
+        const configFile = path.join(RUNTIME_ROOT, 'mimoto.config.json');
 
         // b. send file contents
         return JSON.parse(fs.readFileSync(configFile, 'utf8'));
@@ -49,7 +65,7 @@ function loadComponent(sPackageName, sComponentName)
 
         // check if dirname of root of project is 'mimoto', otherwise in DEV mode so load 'mimoto' package locally
 
-        const sPackagedirectory = path.join(__dirname, '/node_modules/' + sPackageName);
+        const sPackagedirectory = path.join(RUNTIME_ROOT, '/node_modules/' + sPackageName);
 
         console.log('Package dir = ', sPackagedirectory);
 
@@ -131,6 +147,52 @@ if (config.components && Object.keys(config.components).length > 0)
 
 
 
+// Path to your JavaScript file
+const filePath = path.join(RUNTIME_ROOT, '../dist/thesocialcode/mimoto/Mimoto.min.js');
+
+// Read the file content
+fs.readFile(filePath, 'utf8', function(err, data)
+{
+    if (err) {
+        console.error(err);
+        return;
+    }
+
+    // List of class names to replace
+    const classesToReplace = ['MimotoInputInstruction'];
+
+    // Replace each class with an empty string or dummy class
+    let updatedContent = data;
+    classesToReplace.forEach(className => {
+        const regexPattern = new RegExp(`class\\s+${className}\\s*{[\\s\\S]*?}`, 'g');
+        updatedContent = updatedContent.replace(regexPattern, '');
+    });
+
+    // Write the updated content back to the file or a new file
+    fs.writeFile(path.join(RUNTIME_ROOT, '../dist/thesocialcode/mimoto/Mimoto.min.X.js'), updatedContent, 'utf8', function(err) {
+        if (err) return console.error(err);
+        console.log('File has been updated');
+    });
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 /**
  * Recursively read HTML files from a folder
  * @param sFolder
@@ -167,7 +229,7 @@ function concatenateHtmlFiles(bRebuild = false)
     let combinedHtml = [];
 
     // 4. read
-    config.combine.sources.forEach(folder => readHtmlFiles(folder, combinedHtml));
+    config.combine.sources.forEach(folder => readHtmlFiles(path.join(RUNTIME_ROOT, folder), combinedHtml));
 
     try
     {
@@ -175,7 +237,7 @@ function concatenateHtmlFiles(bRebuild = false)
 
 
         // 5. write
-        fs.writeFileSync(config.combine.output, sHTML);
+        fs.writeFileSync(path.join(RUNTIME_ROOT, config.combine.output), sHTML);
 
 
 
@@ -199,7 +261,7 @@ function concatenateHtmlFiles(bRebuild = false)
             });
         });
 
-        console.log('instruction =', aInstructions);
+        console.log('aInstructions =', aInstructions);
 
 
     }

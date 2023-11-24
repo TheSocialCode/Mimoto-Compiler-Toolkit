@@ -1,0 +1,8 @@
+<dialog data-mimoto-register="ConfirmDialog" class="p-7 rounded-lg shadow-lg w-96 flex flex-col gap-3 text-center">
+	<h1 class="text-2xl">Are you sure?</h1>
+	<div data-mimoto-value="{{ if (isNotEmpty(message),message,'') }}" class="text-gray-700 italic empty:hidden"></div>
+	<div class="flex-none mt-5">
+		<button data-mimoto-action="cancel()" class="bg-gray-50 text-gray-500 rounded-md p-1.5 cursor-pointer hover:bg-gray-100 hover:text-gray-800 select-none w-20 outline-none float-left">No</button>
+		<button data-mimoto-action="close()" class="bg-slate-700 text-white rounded-md p-1.5 cursor-pointer hover:bg-black select-none w-20 outline-none float-right">Yes</button>
+	</div>
+</dialog>
