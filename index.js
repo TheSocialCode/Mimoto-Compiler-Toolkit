@@ -11,7 +11,7 @@ const path = require('path');
 const { JSDOM } = require('jsdom');
 
 // 2. import Mimoto classes
-const MimotoFirebaseUtils = require('@thesocialcode/mimoto-firebase-toolkit/src/MimotoFirebaseUtils');
+const MimotoFirebaseUtils = require('@thesocialcode/mimoto-firebase-toolkit/utils/DataUtils');
 
 
 // --- init
@@ -26,6 +26,9 @@ const RUNTIME_ROOT = path.join(process.cwd(), sRootDir);
 
 console.log('RUNTIME_ROOT =', RUNTIME_ROOT);
 
+
+
+// if name of root folder is 'mimoto' then in 'mimoto' package so adjust packages
 
 
 
@@ -133,6 +136,55 @@ if (!config.combine || !config.combine.output)
 }
 
 
+if (config.mimoto && config.mimoto.target)
+{
+    console.log('config.mimoto =', config.mimoto);
+
+    // check target
+
+    // Path to your JavaScript file
+    const filePath = path.join(RUNTIME_ROOT, '../dist/thesocialcode/mimoto/Mimoto.min.js');
+
+// Read the file content
+    fs.readFile(filePath, 'utf8', function(err, data)
+    {
+        if (err) {
+            console.error(err);
+            return;
+        }
+
+
+        // // List of class names to replace
+        // const classesToReplace = ['MimotoInputInstruction'];
+        //
+        // // Replace each class with an empty string or dummy class
+        let updatedContent = data;
+        // classesToReplace.forEach(className => {
+        //     const regexPattern = new RegExp(`class\\s+${className}\\s*{[\\s\\S]*?}`, 'g');
+        //     updatedContent = updatedContent.replace(regexPattern, '');
+        // });
+
+
+
+        let sTargetFilePath = path.join(RUNTIME_ROOT, config.mimoto.target, 'Mimoto.js')
+
+        // Extract the directory path from the file path
+        const sDirPath = path.dirname(sTargetFilePath);
+
+        // Create the directory if it doesn't exist
+        if (!fs.existsSync(sDirPath)) fs.mkdirSync(sDirPath, { recursive: true });
+
+
+
+        // Write the updated content back to the file or a new file
+        // fs.writeFile(path.join(RUNTIME_ROOT, '../dist/thesocialcode/mimoto/Mimoto.min.X.js'), updatedContent, 'utf8', function(err) {
+        fs.writeFile(sTargetFilePath, updatedContent, 'utf8', function(err) {
+            if (err) return console.error(err);
+            console.log('File has been updated');
+        });
+    });
+}
+
 
 
 if (config.components && Object.keys(config.components).length > 0)
@@ -143,44 +195,6 @@ if (config.components && Object.keys(config.components).length > 0)
 
     });
 }
-
-
-
-
-// Path to your JavaScript file
-const filePath = path.join(RUNTIME_ROOT, '../dist/thesocialcode/mimoto/Mimoto.min.js');
-
-// Read the file content
-fs.readFile(filePath, 'utf8', function(err, data)
-{
-    if (err) {
-        console.error(err);
-        return;
-    }
-
-    // List of class names to replace
-    const classesToReplace = ['MimotoInputInstruction'];
-
-    // Replace each class with an empty string or dummy class
-    let updatedContent = data;
-    classesToReplace.forEach(className => {
-        const regexPattern = new RegExp(`class\\s+${className}\\s*{[\\s\\S]*?}`, 'g');
-        updatedContent = updatedContent.replace(regexPattern, '');
-    });
-
-    // Write the updated content back to the file or a new file
-    fs.writeFile(path.join(RUNTIME_ROOT, '../dist/thesocialcode/mimoto/Mimoto.min.X.js'), updatedContent, 'utf8', function(err) {
-        if (err) return console.error(err);
-        console.log('File has been updated');
-    });
-});
-
-
-
-
-
-
-
 
 
 

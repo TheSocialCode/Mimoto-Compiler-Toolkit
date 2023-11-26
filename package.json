@@ -13,7 +13,7 @@
         "mimoto": "cli.js"
     },
     "dependencies": {
-        "@thesocialcode/mimoto-firebase-toolkit": "^1.0.0",
+        "@thesocialcode/mimoto-firebase-toolkit": "^1.0.1",
         "chokidar": "^3.5.3",
         "jsdom": "^22.1.0"
     },
