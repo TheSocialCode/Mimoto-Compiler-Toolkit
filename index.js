@@ -24,7 +24,7 @@ args.forEach((val, index) => { if (val === '-root') { sRootDir = args[index + 1]
 const RUNTIME_ROOT = path.join(process.cwd(), sRootDir);
 
 
-console.log('RUNTIME_ROOT =', RUNTIME_ROOT);
+// console.log('RUNTIME_ROOT =', RUNTIME_ROOT);
 
 
 
@@ -138,7 +138,7 @@ if (!config.combine || !config.combine.output)
 
 if (config.mimoto && config.mimoto.target)
 {
-    console.log('config.mimoto =', config.mimoto);
+    // console.log('config.mimoto =', config.mimoto);
 
     // check target
 
@@ -180,21 +180,21 @@ if (config.mimoto && config.mimoto.target)
         // fs.writeFile(path.join(RUNTIME_ROOT, '../dist/thesocialcode/mimoto/Mimoto.min.X.js'), updatedContent, 'utf8', function(err) {
         fs.writeFile(sTargetFilePath, updatedContent, 'utf8', function(err) {
             if (err) return console.error(err);
-            console.log('File has been updated');
+            console.log('✨ - Mimoto.js has been added to the project!\n');
         });
     });
 }
 
 
 
-if (config.components && Object.keys(config.components).length > 0)
-{
-    Object.keys(config.components).forEach(sPackageName => {
-
-        loadComponent(sPackageName, config.components[sPackageName]);
-
-    });
-}
+// if (config.components && Object.keys(config.components).length > 0)
+// {
+//     Object.keys(config.components).forEach(sPackageName => {
+//
+//         loadComponent(sPackageName, config.components[sPackageName]);
+//
+//     });
+// }
 
 
 
@@ -258,24 +258,24 @@ function concatenateHtmlFiles(bRebuild = false)
 
 
 
-        const dom = new JSDOM(sHTML);
-        const document = dom.window.document;
-
-        let aInstructions = {};
-
-        const elements = document.querySelectorAll('*');
-        elements.forEach(el => {
-            Array.from(el.attributes).forEach(attr => {
-                if (attr.name.startsWith('data-mimoto-')) {
-
-                    aInstructions[attr.name] = true;
-
-                    console.log(`Element: ${el.tagName}, Attribute: ${attr.name}, Value: ${attr.value}`);
-                }
-            });
-        });
-
-        console.log('aInstructions =', aInstructions);
+        // const dom = new JSDOM(sHTML);
+        // const document = dom.window.document;
+        //
+        // let aInstructions = {};
+        //
+        // const elements = document.querySelectorAll('*');
+        // elements.forEach(el => {
+        //     Array.from(el.attributes).forEach(attr => {
+        //         if (attr.name.startsWith('data-mimoto-')) {
+        //
+        //             aInstructions[attr.name] = true;
+        //
+        //             console.log(`Element: ${el.tagName}, Attribute: ${attr.name}, Value: ${attr.value}`);
+        //         }
+        //     });
+        // });
+        //
+        // console.log('aInstructions =', aInstructions);
 
 
     }
