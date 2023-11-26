@@ -1,6 +1,6 @@
 {
     "name": "mimoto",
-    "version": "1.0.11",
+    "version": "1.0.12",
     "description": "Concatenate HTML files from watched folders",
     "license": "MIT",
     "author": "Sebastian Kersten (sebastian@thesocialcode.com)",

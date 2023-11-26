@@ -143,7 +143,7 @@ if (config.mimoto && config.mimoto.target)
     // check target
 
     // Path to your JavaScript file
-    const filePath = path.join(RUNTIME_ROOT, '../bin/thesocialcode/mimoto/Mimoto.min.js');
+    const filePath = path.join(__dirname, 'bin/thesocialcode/mimoto/Mimoto.min.js');
 
 // Read the file content
     fs.readFile(filePath, 'utf8', function(err, data)
@@ -166,7 +166,7 @@ if (config.mimoto && config.mimoto.target)
 
 
 
-        let sTargetFilePath = path.join(__dirname, config.mimoto.target, 'Mimoto.js')
+        let sTargetFilePath = path.join(RUNTIME_ROOT, config.mimoto.target, 'Mimoto.js')
 
         // Extract the directory path from the file path
         const sDirPath = path.dirname(sTargetFilePath);
