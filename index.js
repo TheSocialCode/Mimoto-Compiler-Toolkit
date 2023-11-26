@@ -143,7 +143,7 @@ if (config.mimoto && config.mimoto.target)
     // check target
 
     // Path to your JavaScript file
-    const filePath = path.join(RUNTIME_ROOT, '../dist/thesocialcode/mimoto/Mimoto.min.js');
+    const filePath = path.join(RUNTIME_ROOT, '../bin/thesocialcode/mimoto/Mimoto.min.js');
 
 // Read the file content
     fs.readFile(filePath, 'utf8', function(err, data)
@@ -166,7 +166,7 @@ if (config.mimoto && config.mimoto.target)
 
 
 
-        let sTargetFilePath = path.join(RUNTIME_ROOT, config.mimoto.target, 'Mimoto.js')
+        let sTargetFilePath = path.join(__dirname, config.mimoto.target, 'Mimoto.js')
 
         // Extract the directory path from the file path
         const sDirPath = path.dirname(sTargetFilePath);
@@ -177,7 +177,7 @@ if (config.mimoto && config.mimoto.target)
 
 
         // Write the updated content back to the file or a new file
-        // fs.writeFile(path.join(RUNTIME_ROOT, '../dist/thesocialcode/mimoto/Mimoto.min.X.js'), updatedContent, 'utf8', function(err) {
+        // fs.writeFile(path.join(RUNTIME_ROOT, '../bin/thesocialcode/mimoto/Mimoto.min.X.js'), updatedContent, 'utf8', function(err) {
         fs.writeFile(sTargetFilePath, updatedContent, 'utf8', function(err) {
             if (err) return console.error(err);
             console.log('✨ - Mimoto.js has been added to the project!\n');
