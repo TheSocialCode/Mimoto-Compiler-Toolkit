@@ -1,0 +1,88 @@
+<div data-mimoto-register="SettingsTeam" class="flex flex-col bg-slate-100 w-full h-full relative p-5">
+	
+	<div data-mimoto-list="team" class="flex-none p-2 flex flex-col gap-3 mx-auto w-full max-w-[500px]">
+		<div class="flex-grow">
+			<h1 class="text-2xl uppercase text-slate-400 text-center">Team &amp; permissions</h1>
+		</div>
+
+		<div data-mimoto-class="{hidden:isFalse(getClaim('owner'))}" class="hidden mt-5 border border-dashed border-slate-300 rounded-md p-3 flex flex-col gap-3">
+			<div class="flex-auto flex flex-col sm:flex-row gap-3 items-center">
+				<div class="flex-auto sm:pl-2 text-center sm:text-left">
+					<div class="text-lg font-bold"><span data-mimoto-value="{{ USER_DISPLAYNAME }}"></span></div>
+					<div data-mimoto-value="{{ USER_EMAIL }}" class="text-slate-600 italic text-xs"></div>
+				</div>
+				<div class="flex-none flex flex-row gap-3 items-center sm:pr-2">
+					<div class="text-slate-500">You're the owner</div>
+				</div>
+			</div>
+		</div>
+
+		<div data-mimoto-container="TeamMember" class="empty:hidden mt-5 flex flex-col gap-1"></div>
+
+		<div class="text-center mt-8">
+			<button data-mimoto-action="openPopup('DialogTeamMember').add(merge(data(),{new:true}))" class="bg-slate-700 hover:bg-black text-white rounded-md px-3 py-2">Invite team member</button>
+		</div>
+	</div>
+	
+</div>
+
+<!-- Template: TeamMember -->
+<div data-mimoto-register="TeamMember" class="bg-white rounded-md p-3 flex flex-col gap-3">
+	<div class="flex-auto flex flex-col sm:flex-row gap-3 items-center">
+		<div class="flex-auto sm:pl-2 text-center sm:text-left">
+			<div data-mimoto-output="name" class="text-lg font-bold"></div>
+			<div data-mimoto-output="email" class="text-slate-400 italic text-xs"></div>
+		</div>
+		<div class="flex-none flex flex-row gap-3 items-center sm:pr-2">
+			<div data-mimoto-action="openPopup('Confirm', {vars:{message:'Are you sure you would like to remove team member <strong>' + label + '</strong>?'}}).delete()" class="flex-none text-slate-400 hover:text-pink-500 cursor-pointer select-none"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg></div>
+			<div data-mimoto-action="openPopup('DialogTeamMember', {'vars':DATA}).update(data())" class="flex-none text-slate-400 hover:text-pink-500 cursor-pointer select-none"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" /></svg></div>
+		</div>
+	</div>
+	<!-- new, invited, accepted, resend -->
+</div>
+
+
+<!-- Template: DialogTeamMember -->
+<dialog data-mimoto-register="DialogTeamMember" class="bg-white p-8 rounded-xl shadow-md w-full max-w-[500px]">
+	
+	<h1 class="text-2xl text-slate-700 text-center uppercase">Team member</h1>
+	<div class="mt-5 flex flex-col gap-3">
+		<div>
+			<label for="CreateProject_TeamMemberName" class="text-sm block pl-2 mb-1">Name</label>
+			<div data-mimoto-input="name" data-mimoto-input-settings="{placeholder:'Name', validation:'/[a-zA-Z]+/gi'}" data-mimoto-class="{'text-slate-400 italic':STATE_EMPTY, 'border-pink-500':STATE_ERROR}" id="CreateProject_TeamMemberName" class="border border-transparent bg-slate-50 outline-none p-5 w-full"></div>
+		</div>
+		<div>
+			<label for="CreateProject_TeamMemberEmail" class="text-sm block pl-2 mb-1">Email</label>
+			<div data-mimoto-input="email" data-mimoto-input-settings="{placeholder:'Email', validation:'[a-z0-9]+@[a-z]+\.[a-z]{2,3}'}" data-mimoto-class="{'text-slate-400 italic':STATE_EMPTY, 'border-pink-500':STATE_ERROR}" id="CreateProject_TeamMemberEmail" class="border border-transparent bg-slate-50 outline-none p-5 w-full"></div>
+		</div>
+		
+		<div>
+			<label class="text-sm block pl-2 mb-1">Permissions</label>
+			<div data-mimoto-list="permissions/groups" data-mimoto-container="UserPermissionGroup" data-mimoto-container-vars="{userPermissions:permissions}" data-mimoto-container-settings="{addItemsAsSubview:true}" class="flex flex-col gap-1">
+				
+				<!-- Template: UserPermissionGroup -->
+				<div data-mimoto-register="UserPermissionGroup" data-mimoto-list="permissions/items/{{ KEY }}" data-mimoto-container="UserPermission" data-mimoto-container-vars="{userPermissions:userPermissions, sGroupIdentifier:identifier, sGroupLabel:label}" data-mimoto-container-settings="{addItemsAsSubview:true}" class="flex flex-col gap-1">
+					
+					<!-- Template: UserPermission -->
+					<div data-mimoto-register="UserPermission" data-mimoto-action-xrayid="aaa" data-mimoto-action="collect({permissions:{'{{ sGroupIdentifier }}':{'{{ identifier }}':isFalse(userPermissions.{{ sGroupIdentifier }}.{{ identifier }})}}})" data-mimoto-class="{'text-slate-400 italic':isFalse(userPermissions.{{ sGroupIdentifier }}.{{ identifier }}), 'text-slate-800':isTrue(userPermissions.{{ sGroupIdentifier }}.{{ identifier }})}" class="flex-none flex flex-row gap-3 p-3 bg-slate-50 hover:bg-slate-100 cursor-pointer">
+						<div data-mimoto-output="svg" data-mimoto-output-settings="{html:true}" data-mimoto-class="{'text-pink-500':isTrue(userPermissions.{{ sGroupIdentifier }}.{{ identifier }})}" class="flex-none"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.877-5.877M11.42 15.17l2.496-3.03c.317-.384.74-.626 1.208-.766M11.42 15.17l-4.655 5.653a2.548 2.548 0 11-3.586-3.586l6.837-5.63m5.108-.233c.55-.164 1.163-.188 1.743-.14a4.5 4.5 0 004.486-6.336l-3.276 3.277a3.004 3.004 0 01-2.25-2.25l3.276-3.276a4.5 4.5 0 00-6.336 4.486c.091 1.076-.071 2.264-.904 2.95l-.102.085m-1.745 1.437L5.909 7.5H4.5L2.25 3.75l1.5-1.5L7.5 4.5v1.409l4.26 4.26m-1.745 1.437l1.745-1.437m6.615 8.206L15.75 15.75M4.867 19.125h.008v.008h-.008v-.008z" /></svg></div>
+						<div><span data-mimoto-output="sGroupLabel" class="flex-auto"></span> - <span data-mimoto-output="label" class="flex-auto"></span></div>
+					</div>
+					<!-- Template: UserPermission - END -->
+
+				</div>
+				<!-- Template: UserPermissionGroup - END -->
+			
+			</div>
+		</div>
+	</div>
+	
+	<div class="flex flex-row mt-8">
+		<div class="flex-auto">
+			<button data-mimoto-action="cancel()" class="bg-white text-slate-500 hover:text-slate-800 hover:underline rounded-md px-3 py-2 outline-none">Cancel</button>
+		</div>
+		<div class="flex-none">
+			<button data-mimoto-action="close()" class="bg-slate-700 hover:bg-black text-white rounded-md px-3 py-2 outline-none">Done</button>
+		</div>
+	</div>
+</dialog>

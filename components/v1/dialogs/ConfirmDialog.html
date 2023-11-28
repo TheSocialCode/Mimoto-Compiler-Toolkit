@@ -1,8 +1,9 @@
+<!-- Mimoto prototyping component: ConfirmDialog -->
 <dialog data-mimoto-register="ConfirmDialog" class="p-7 rounded-lg shadow-lg w-96 flex flex-col gap-3 text-center">
-	<h1 class="text-2xl">Are you sure?</h1>
+	<h1 data-mimoto-value="{{ if (isNotEmpty(title),title,'Are you sure?') }}" class="text-2xl"></h1>
 	<div data-mimoto-value="{{ if (isNotEmpty(message),message,'') }}" class="text-gray-700 italic empty:hidden"></div>
 	<div class="flex-none mt-5">
-		<button data-mimoto-action="cancel()" class="bg-gray-50 text-gray-500 rounded-md p-1.5 cursor-pointer hover:bg-gray-100 hover:text-gray-800 select-none w-20 outline-none float-left">No</button>
-		<button data-mimoto-action="close()" class="bg-slate-700 text-white rounded-md p-1.5 cursor-pointer hover:bg-black select-none w-20 outline-none float-right">Yes</button>
+		<button data-mimoto-action="cancel()" data-mimoto-value="{{ if (isNotEmpty(buttonCancel),buttonCancel,'Cancel') }}" class="bg-gray-50 text-gray-500 rounded-md py-1.5 px-3 cursor-pointer hover:bg-gray-100 hover:text-gray-800 select-none outline-none float-left"></button>
+		<button data-mimoto-action="close()" data-mimoto-value="{{ if (isNotEmpty(buttonYes),buttonYes,'Yes') }}" class="bg-slate-700 text-white rounded-md py-1.5 px-3 cursor-pointer hover:bg-black select-none outline-none float-right"></button>
 	</div>
 </dialog>

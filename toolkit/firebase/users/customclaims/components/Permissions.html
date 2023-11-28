@@ -1,0 +1,101 @@
+<div data-mimoto-register="SettingsPermissions" class="flex flex-col bg-slate-100 w-full h-full relative p-5">
+	
+	<div data-mimoto-list="permissions/groups" class="flex-none p-2 flex flex-col gap-3 mx-auto w-full max-w-[500px]">
+		<div class="flex-grow">
+			<h1 class="text-2xl uppercase text-slate-400 text-center">Permissions</h1>
+		</div>
+		<div data-mimoto-container="PermissionGroup" class="empty:hidden mt-5 mb-8 flex flex-col gap-1"></div>
+		<div class="text-center">
+			<button data-mimoto-action="openPopup('DialogPermissionGroup').add(data())" class="bg-slate-700 hover:bg-black text-white rounded-md px-3 py-2">Add permission group</button>
+		</div>
+	</div>
+	
+</div>
+
+<!-- Template: PermissionGroup -->
+<div data-mimoto-register="PermissionGroup" data-mimoto-list="permissions/items/{{ KEY }}" class="bg-white rounded-md p-3 flex flex-col gap-3">
+	<div class="flex-auto flex flex-col sm:flex-row gap-3 items-center">
+		<div class="flex-auto sm:pl-2 text-center sm:text-left">
+			<div data-mimoto-output="label" class="text-lg font-bold"></div>
+			<div data-mimoto-output="identifier" class="text-slate-400 italic text-xs"></div>
+		</div>
+		<div class="flex-none flex flex-row gap-3 items-center">
+			<div data-mimoto-action="openPopup('Confirm', {vars:{message:'Are you sure you would like to remove the permission group <strong>' + label + '</strong>? All nested permissions will be deleted as well.'}}).delete()" class="flex-none text-slate-400 hover:text-pink-500 cursor-pointer select-none"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg></div>
+			<div data-mimoto-action="openPopup('DialogPermissionGroup', {'vars':{'label':label, 'identifier':identifier}}).update(data())" class="flex-none text-slate-400 hover:text-pink-500 cursor-pointer select-none"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" /></svg></div>
+			<div class="flex-none"><button data-mimoto-action="openPopup('DialogPermission').add(data())" class="bg-slate-700 hover:bg-black text-white rounded-md px-3 py-2">Add permission</button></div>
+		</div>
+	</div>
+	<div data-mimoto-container="Permission" class="flex-auto empty:hidden flex flex-col gap-1"></div>
+</div>
+
+<!-- Template: Permission -->
+<div data-mimoto-register="Permission" class="bg-slate-50 rounded-md p-3 flex flex-col gap-3">
+	<div class="flex-auto flex flex-col sm:flex-row gap-3 items-center">
+		<div class="flex-none text-pink-500">
+			<div data-mimoto-output="svg" data-mimoto-output-settings="{html:true}"></div>
+		</div>
+		<div class="flex-auto text-center sm:text-left">
+			<div data-mimoto-output="label" class="font-bold"></div>
+			<div data-mimoto-output="identifier" class="text-slate-400 italic text-xs"></div>
+		</div>
+		<div class="flex-none flex flex-row gap-3 items-center">
+			<div data-mimoto-action="openPopup('Confirm', {vars:{message:'Are you sure you would like to remove the permission <strong>' + label + '</strong>?'}}).delete()" class="flex-none text-slate-400 hover:text-pink-500 cursor-pointer select-none"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg></div>
+			<div data-mimoto-action="openPopup('DialogPermission', {'vars':{'label':label, 'identifier':identifier, 'svg':svg}}).update(data())" class="flex-none text-slate-400 hover:text-pink-500 cursor-pointer select-none"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" /></svg></div>
+		</div>
+	</div>
+</div>
+
+
+<!-- Template: DialogPermissionGroup -->
+<dialog data-mimoto-register="DialogPermissionGroup" class="bg-white p-8 rounded-xl shadow-md w-full max-w-[500px]">
+	
+	<h1 class="text-2xl text-slate-700 text-center uppercase">Permission group</h1>
+	<div class="mt-5 flex flex-col gap-3">
+		<div>
+			<label for="DialogPermissionGroup_Label" class="text-sm block pl-2 mb-1">Label</label>
+			<div data-mimoto-input="label" data-mimoto-input-settings="{collect:true, placeholder:'Label'}" data-mimoto-class="{'text-slate-400 italic':STATE_EMPTY}" id="DialogPermissionGroup_Label" class="bg-slate-50 outline-none p-5 w-full"></div>
+		</div>
+		<div>
+			<label for="DialogPermissionGroup_Identifier" class="text-sm block pl-2 mb-1">Identifier</label>
+			<div data-mimoto-input="identifier" data-mimoto-input-settings="{collect:true, placeholder:'Identifier'}" data-mimoto-class="{'text-slate-400 italic':STATE_EMPTY}" id="DialogPermissionGroup_Identifier" class="bg-slate-50 outline-none p-5 w-full"></div>
+		</div>
+	</div>
+	
+	<div class="flex flex-row mt-8">
+		<div class="flex-auto">
+			<button data-mimoto-action="cancel()" class="bg-white text-slate-500 hover:text-slate-800 hover:underline rounded-md px-3 py-2 outline-none">Cancel</button>
+		</div>
+		<div class="flex-none">
+			<button data-mimoto-action="close()" class="bg-slate-700 hover:bg-black text-white rounded-md px-3 py-2 outline-none">Done</button>
+		</div>
+	</div>
+</dialog>
+
+<!-- Template: DialogCreateProject -->
+<dialog data-mimoto-register="DialogPermission" class="bg-white p-8 rounded-xl shadow-md w-full max-w-[500px]">
+	
+	<h1 class="text-2xl text-slate-700 text-center uppercase">Permission</h1>
+	<div class="mt-5 flex flex-col gap-3">
+		<div>
+			<label for="DialogPermission_Label" class="text-sm block pl-2 mb-1">Label</label>
+			<div data-mimoto-input="label" data-mimoto-input-settings="{collect:true, placeholder:'Label'}" data-mimoto-class="{'text-slate-400 italic':STATE_EMPTY}" id="DialogPermission_Label" class="bg-slate-50 outline-none p-5 w-full"></div>
+		</div>
+		<div>
+			<label for="DialogPermission_Identifier" class="text-sm block pl-2 mb-1">Identifier</label>
+			<div data-mimoto-input="identifier" data-mimoto-input-settings="{collect:true, placeholder:'Identifier'}" data-mimoto-class="{'text-slate-400 italic':STATE_EMPTY}" id="DialogPermission_Identifier" class="bg-slate-50 outline-none p-5 w-full"></div>
+		</div>
+		<div>
+			<label for="DialogPermission_SVG" class="text-sm block pl-2 mb-1">SVG icon</label>
+			<div data-mimoto-input="svg" data-mimoto-input-settings="{collect:true, placeholder:'SVG code'}" data-mimoto-class="{'text-slate-400 italic':STATE_EMPTY}" id="DialogPermission_SVG" class="bg-slate-50 outline-none p-5 w-full"></div>
+		</div>
+	</div>
+	
+	<div class="flex flex-row mt-8">
+		<div class="flex-auto">
+			<button data-mimoto-action="cancel()" class="bg-white text-slate-500 hover:text-slate-800 hover:underline rounded-md px-3 py-2 outline-none">Cancel</button>
+		</div>
+		<div class="flex-none">
+			<button data-mimoto-action="close()" class="bg-slate-700 hover:bg-black text-white rounded-md px-3 py-2 outline-none">Done</button>
+		</div>
+	</div>
+</dialog>
