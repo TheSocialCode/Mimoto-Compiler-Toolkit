@@ -4,6 +4,10 @@
  * @author Sebastian Kersten (@supertaboo)
  */
 
+
+const DataUtils = require('./../utils/DataUtils');
+
+
 class DoneNotification
 {
     apply(compiler) {
@@ -12,11 +16,19 @@ class DoneNotification
             (
                 stats /* stats is passed as an argument when done hook is tapped.  */
             ) => {
+
+                // 1. read
+                let end = new Date();
+
+                // 2. compose
+                const sTimestampDone = end.getFullYear() + '.' + DataUtils.addLeadingZeros(end.getMonth() + 1, 2) + '.' + DataUtils.addLeadingZeros(end.getDate(), 2) + ' ' + DataUtils.addLeadingZeros(end.getHours(), 2) + ':' + DataUtils.addLeadingZeros(end.getMinutes(), 2) + ':' + DataUtils.addLeadingZeros(end.getSeconds(), 2);
+
+                // 3. output
                 setTimeout(
                     () => {
                         console.log(
-                            '\n-------------------------------------------------------------------------------------\n' +
-                            '❤️  - Compile done! - ' + new Date().toString() + '\n'
+                            '\n---------------------------------------\n' +
+                            '❤️ - Compile done! - \u001b[1m' + sTimestampDone + '\u001b[22m\n'
                         );
                     },
                     100

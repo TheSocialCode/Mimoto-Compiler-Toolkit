@@ -11,7 +11,7 @@ const path = require('path');
 const { JSDOM } = require('jsdom');
 
 // 2. import Mimoto classes
-const MimotoFirebaseUtils = require('@thesocialcode/mimoto-firebase-toolkit/utils/DataUtils');
+const DataUtils = require('./toolkit/utils/DataUtils');
 
 
 // --- init
@@ -291,7 +291,7 @@ function concatenateHtmlFiles(bRebuild = false)
     let end = new Date();
 
     // 8. compose
-    const sTimestampDone = end.getFullYear() + '.' + MimotoFirebaseUtils.addLeadingZeros(end.getMonth() + 1, 2) + '.' + MimotoFirebaseUtils.addLeadingZeros(end.getDate(), 2) + ' ' + MimotoFirebaseUtils.addLeadingZeros(end.getHours(), 2) + ':' + MimotoFirebaseUtils.addLeadingZeros(end.getMinutes(), 2) + ':' + MimotoFirebaseUtils.addLeadingZeros(end.getSeconds(), 2);
+    const sTimestampDone = end.getFullYear() + '.' + DataUtils.addLeadingZeros(end.getMonth() + 1, 2) + '.' + DataUtils.addLeadingZeros(end.getDate(), 2) + ' ' + DataUtils.addLeadingZeros(end.getHours(), 2) + ':' + DataUtils.addLeadingZeros(end.getMinutes(), 2) + ':' + DataUtils.addLeadingZeros(end.getSeconds(), 2);
 
     // 9. output result
     console.log('----------------------------------------------');
