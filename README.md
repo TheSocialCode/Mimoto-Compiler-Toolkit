@@ -26,9 +26,9 @@ npx mimoto
 ```
 
 # During development
-Go into the **/examples** folder and run:
+In the root of the project, run:
 ``` 
-node ../cli.js
+node cli.js -root example
 ```
 
 

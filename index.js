@@ -27,6 +27,8 @@ const RUNTIME_ROOT = path.join(process.cwd(), sRootDir);
 // console.log('RUNTIME_ROOT =', RUNTIME_ROOT);
 
 
+// Compiler remove comments
+
 
 // if name of root folder is 'mimoto' then in 'mimoto' package so adjust packages
 
@@ -55,59 +57,119 @@ function loadConfig() {
     }
 }
 
-/**
- * Load component
- */
-function loadComponent(sPackageName, sComponentName)
-{
-    console.log('');
-    console.log('🐰 - sPackageName =', sPackageName);
 
+/**
+ * Find package root (in order to locate node_modules folder)
+ * @param currentDir
+ * @returns {*|null}
+ */
+function findPackageRoot(currentDir)
+{
+    // 1. check if the current directory contains a package.json file, return the path if it does and exit
+    if (require('fs').existsSync(path.join(currentDir, 'package.json'))) return currentDir;
+
+    // 2. get the parent directory
+    const parentDir = path.dirname(currentDir);
+
+    // 3. if we've reached the root directory without finding a package.json, return null
+    if (currentDir === parentDir) return null;
+
+    // 4. recursively search in the parent directory
+    return findPackageRoot(parentDir);
+}
+
+
+// const packageRoot = findPackageRoot(__dirname);
+
+// if (packageRoot) {
+//     console.log(`The root directory of the package is: ${packageRoot}`);
+// } else {
+//     console.log('No package.json found in the directory hierarchy.');
+// }
+
+
+
+
+/**
+ * Load components in package
+ */
+function loadComponentsInPackage(sPackageName, components)
+{
+    // 1. init
+    let aTemplates = [];
+
+    // 2. manage
     try {
 
+        // a. find package root
+        const packageRoot = findPackageRoot(__dirname);
 
-        // check if dirname of root of project is 'mimoto', otherwise in DEV mode so load 'mimoto' package locally
-
-        const sPackagedirectory = path.join(RUNTIME_ROOT, '/node_modules/' + sPackageName);
-
-        console.log('Package dir = ', sPackagedirectory);
-
-
-
-// Replace this with the actual directory path
-//         const directoryPath = 'path/to/your/directory';
-
-        // const parentDirectory = path.dirname(directoryPath);
-        // const isNodeModules = path.basename(parentDirectory) === 'node_modules';
-        // const isNodeModules = parentDirectory === __dirname;
-
-        // console.log(isNodeModules ? 'Parent directory is node_modules' : 'Parent directory is not node_modules');
-
-
-
-
-        if (fs.existsSync(sPackagedirectory))
+        // b. validate or report and exit
+        if (!packageRoot)
         {
-            console.log('Folder exists.');
-        } else {
-            console.log('Folder does not exist.');
+            console.log('Package root not found. Unable to reach node_modules folder. for adding component', sComponentName, 'in', sPackageName);
+            return;
         }
 
+        // c. compose
+        const sPackageDirectory = path.join(packageRoot, 'node_modules', sPackageName);
 
-        // a. point to the directory where the script is executed, not where it is located
-        // const configFile = path.join(process.cwd(), 'mimoto.config.json');
+        // d. parse all components
+        Object.keys(components).forEach(sComponentName => {
 
-        // b. send file contents
-        // return JSON.parse(fs.readFileSync(configFile, 'utf8'));
+            // I. compose
+            let sComponentPath = path.join(sPackageDirectory, components[sComponentName]);
+
+            // II. complete
+            sComponentPath = (sComponentPath.indexOf('.html') === -1) ? sComponentPath + '.html' : sComponentPath;
+
+            // III. manage
+            try {
+
+                // 1. Check if the HTML file exists
+                if (!fs.existsSync(sComponentPath))
+                {
+                    // a. report
+                    console.log(`HTML file not found: ${sComponentPath}`);
+
+                    // b. exit
+                    process.exit(1);
+                }
+
+                // 2. load
+                let sHTML = fs.readFileSync(sComponentPath, 'utf8');
+
+                // 3. prepare
+                const sInstruction = 'data-mimoto-register';
+                const regex = new RegExp(`${sInstruction}="[^"]*"`, 'g');
+
+                // 4. rename component
+                sHTML = sHTML.replace(regex, `${sInstruction}="${sComponentName}"`);
+
+                // 5. store
+                aTemplates.push(sHTML);
+
+            } catch (err)
+            {
+                // 1. report
+                console.error('Error while loading HTML file:', err);
+
+                // 2. exit
+                process.exit(1);
+            }
+        });
 
     } catch(error) {
 
         // a. report error
-        console.log('🚨 - WARNING - Node package node found');
+        console.log('🚨 - WARNING - Node package ' + sPackageName + ' node found');
 
         // b. exit
         process.exit(1);
     }
+
+    // send
+    return aTemplates;
 }
 
 
@@ -187,14 +249,16 @@ if (config.mimoto && config.mimoto.target)
 
 
 
-// if (config.components && Object.keys(config.components).length > 0)
-// {
-//     Object.keys(config.components).forEach(sPackageName => {
-//
-//         loadComponent(sPackageName, config.components[sPackageName]);
-//
-//     });
-// }
+let aCoreFiles = [];
+
+if (config.components && Object.keys(config.components).length > 0)
+{
+    Object.keys(config.components).forEach(sPackageName => {
+
+        aCoreFiles = loadComponentsInPackage(sPackageName, config.components[sPackageName]);
+
+    });
+}
 
 
 
@@ -240,14 +304,14 @@ function concatenateHtmlFiles(bRebuild = false)
     console.log(((bRebuild) ? 'Rebuilding' : 'Building') + ` \u001b[1m\u001b[32m${config.combine.output}\u001b[39m\u001b[22m ...`);
 
     // 3. init
-    let combinedHtml = [];
+    let aCombinedHtml = aCoreFiles.slice();
 
     // 4. read
-    config.combine.sources.forEach(folder => readHtmlFiles(path.join(RUNTIME_ROOT, folder), combinedHtml));
+    config.combine.sources.forEach(folder => readHtmlFiles(path.join(RUNTIME_ROOT, folder), aCombinedHtml));
 
     try
     {
-        let sHTML = combinedHtml.join('\n')
+        let sHTML = aCombinedHtml.join('\n')
 
 
         // 5. write

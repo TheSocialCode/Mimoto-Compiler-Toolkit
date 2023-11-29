@@ -6,13 +6,9 @@
         "output": "output/CombinedTemplates.html"
     },
     "components": {
-        "mimoto": [
-            "v1/ConfirmDialog",
-            "LayoutX"
-        ],
-        "reference to other package in node modules": [
-            "v1/Dialog"
-        ]
+        "mimoto": {
+            "MimotoConfirmDialog": "components/v1/dialogs/ConfirmDialog"
+        }
     },
     "mimoto": {
         "version": "1.0.0",
