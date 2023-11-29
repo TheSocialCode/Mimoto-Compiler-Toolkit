@@ -102,7 +102,7 @@ function loadComponentsInPackage(sPackageName, components)
     try {
 
         // a. find package root
-        const packageRoot = findPackageRoot(__dirname);
+        const packageRoot = findPackageRoot(process.cwd());
 
         // b. validate or report and exit
         if (!packageRoot)
