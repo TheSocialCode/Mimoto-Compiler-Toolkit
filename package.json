@@ -16,7 +16,7 @@
         "chokidar": "^3.5.3",
         "jsdom": "^22.1.0",
         "openai": "^3.2.1",
-        "mimoto": "^1.0.17"
+        "mimoto": "^1.0.18"
     },
     "repository": {
         "type": "git",
