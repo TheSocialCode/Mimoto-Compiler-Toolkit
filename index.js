@@ -27,11 +27,8 @@ const RUNTIME_ROOT = path.join(process.cwd(), sRootDir);
 // console.log('RUNTIME_ROOT =', RUNTIME_ROOT);
 
 
-// Compiler remove comments
-
-
-// if name of root folder is 'mimoto' then in 'mimoto' package so adjust packages
-
+// TODO
+// - Compiler remove comments
 
 
 
@@ -383,7 +380,7 @@ setTimeout(() => {
     // b. initial build
     concatenateHtmlFiles();
 
-}, 10);
+}, 1000);
 
 // 8. export
 module.exports = { concatenateHtmlFiles };
