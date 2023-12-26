@@ -42,3 +42,6 @@ This package includes frequently used [Mimoto](https://thesocialcode.com/mimoto)
 - conversationGPT - A tiny communication focused layer on top of OpenAI's [GPT](https://platform.openai.com/docs/guides/gpt).
 
 For more information on how to use these components, see [Mimoto Firebase Toolkit - Modules](https://github.com/TheSocialCode/Mimoto-Firebase-Toolkit/wiki/Modules)
+
+# Future features
+- Auto remove comments from HTML files
