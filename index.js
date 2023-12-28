@@ -11,16 +11,30 @@ const path = require('path');
 // 2. import Mimoto CLI classes
 const DistributeMimoto = require('./src/DistributeMimoto');
 const CombineTemplates = require('./src/CombineTemplates');
+const CloneFile = require('./src/CloneFile');
 
-// 3. import Mimoto util classes
-const DataUtils = require('./toolkit/utils/DataUtils');
+
+
+// --- special functions
+
+
+// 3. clone watched file
+let bIsCloning = false;
+const args = process.argv.slice(2); // removes the first two default elements
+args.forEach((val, index) => { if (val === '-clone') { new CloneFile(args[index + 1], args[index + 2]); bIsCloning = true; } });
+if (bIsCloning) return;
+
+
+
+// --- core functions
+
 
 // 4. load configuration file mimoto.config.json
 const config = (() =>
 {
     // a. get root directory
     let sRootDir = '';
-    const args = process.argv.slice(2); // Removes the first two default elements
+    const args = process.argv.slice(2); // removes the first two default elements
     args.forEach((val, index) => { if (val === '-root') { sRootDir = args[index + 1]; } });
     const RUNTIME_ROOT = path.join(process.cwd(), sRootDir);
 

@@ -1,7 +1,6 @@
 /**
- * Mimoto - The Social Code
- *
- * @author Sebastian Kersten (@supertaboo)
+ * Mimoto Compiler Toolkit - A tiny helper for building Mimoto projects
+ * @author - Sebastian Kersten (sebastian@thesocialcode.com)
  */
 
 

@@ -31,6 +31,12 @@ In the root of the project, run:
 node cli.js -root example
 ```
 
+# Utility function
+Watch and auto-clone a file
+``` 
+npx mimoto -clone <file_to_watch> <clone_destination>
+```
+
 
 # Mimoto-Firebase-Toolkit
 
