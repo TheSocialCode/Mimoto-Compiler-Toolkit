@@ -29,9 +29,9 @@ class CloneFile
 	/**
 	 * Constructor
 	 * @param sFileToWatch
-	 * @param sDestinationPath
+	 * @param sDestinationFile
 	 */
-	constructor(sFileToWatch, sDestinationPath)
+	constructor(sFileToWatch, sDestinationFile)
 	{
 		// 1. validate file to watch or exit
 		if (!fs.existsSync(sFileToWatch))
@@ -42,10 +42,10 @@ class CloneFile
 		}
 
 		// 2. validate destination path or exit
-		if (!sDestinationPath)
+		if (!sDestinationFile)
 		{
 			console.log('\n');
-			console.log('🚨 - WARNING - Clone function needs a destination path');
+			console.log('🚨 - WARNING - Clone function needs a destination path and file name');
 			process.exit(1);
 		}
 
@@ -55,27 +55,46 @@ class CloneFile
 			// a. validate or exit
 			if (!(sFileName && sEventType === 'change')) return;
 
-			// b. compose destination file path
-			const sDestinationFile = path.join(sDestinationPath, sFileName);
-
-			// c. create the directory if it doesn't exist
-			if (!fs.existsSync(sDestinationPath)) fs.mkdirSync(sDestinationPath, { recursive: true });
-
-			// d. copy the file to the destination
-			shell.cp(sFileToWatch, sDestinationFile);
-
-			// e. register
-			let end = new Date();
-
-			// f. compose
-			const sTimestampDone = end.getFullYear() + '.' + DataUtils.addLeadingZeros(end.getMonth() + 1, 2) + '.' + DataUtils.addLeadingZeros(end.getDate(), 2) + ' ' + DataUtils.addLeadingZeros(end.getHours(), 2) + ':' + DataUtils.addLeadingZeros(end.getMinutes(), 2) + ':' + DataUtils.addLeadingZeros(end.getSeconds(), 2);
-
-			// g. output result
-			console.log(`🥦 - File \u001b[1m${sFileName}\u001b[22m copied to \u001b[1m${sDestinationFile}\u001b[22m at ${sTimestampDone}\n`);
+			// b. clone
+			this._cloneFile(sFileToWatch, sDestinationFile);
 		});
 
 		// 4. report
 		console.log(`Watching for file changes on ${sFileToWatch}\n`);
+
+		// 5. initial clone
+		this._cloneFile(sFileToWatch, sDestinationFile);
+	}
+
+
+
+	// ----------------------------------------------------------------------------
+	// --- Private methods --------------------------------------------------------
+	// ----------------------------------------------------------------------------
+
+
+	/**
+	 * Clone file
+	 * @param sFileToWatch
+	 * @param sDestinationFile
+	 * @private
+	 */
+	_cloneFile(sFileToWatch, sDestinationFile)
+	{
+		// 1. create the directory if it doesn't exist
+		if (!fs.existsSync(path.dirname(sDestinationFile))) fs.mkdirSync(path.dirname(sDestinationFile), { recursive: true });
+
+		// 2. copy the file to the destination
+		shell.cp(sFileToWatch, sDestinationFile);
+
+		// 3. register
+		let end = new Date();
+
+		// 4. compose
+		const sTimestampDone = end.getFullYear() + '.' + DataUtils.addLeadingZeros(end.getMonth() + 1, 2) + '.' + DataUtils.addLeadingZeros(end.getDate(), 2) + ' ' + DataUtils.addLeadingZeros(end.getHours(), 2) + ':' + DataUtils.addLeadingZeros(end.getMinutes(), 2) + ':' + DataUtils.addLeadingZeros(end.getSeconds(), 2);
+
+		// 5. output result
+		console.log(`🥦 - File \u001b[1m${path.basename(sFileToWatch)}\u001b[22m copied to \u001b[1m${sDestinationFile}\u001b[22m at ${sTimestampDone}\n`);
 	}
 
 }
