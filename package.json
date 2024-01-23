@@ -1,6 +1,6 @@
 {
     "name": "mimoto",
-    "version": "1.0.24",
+    "version": "1.0.25",
     "description": "Mimoto Compiler Toolkit",
     "license": "MIT",
     "author": "Sebastian Kersten (sebastian@thesocialcode.com)",
@@ -15,7 +15,7 @@
     "dependencies": {
         "chokidar": "^3.5.3",
         "jsdom": "^22.1.0",
-        "mimoto": "^1.0.24",
+        "mimoto": "^1.0.25",
         "openai": "^3.2.1",
         "shelljs": "^0.8.5"
     },
