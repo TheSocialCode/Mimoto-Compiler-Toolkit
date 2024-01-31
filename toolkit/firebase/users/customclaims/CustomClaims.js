@@ -225,7 +225,14 @@ class CustomClaims
 				if (!DataUtils.isObject(userConfig)) continue;
 
 				// c. validate and skip
-				if (!userConfig.email || userConfig.email.toLowerCase() !== user.email.toLowerCase()) continue;
+				if (!userConfig.email)
+                {
+                    // I. convert to array
+                    let aEmails = (Array.isArray(userConfig.email)) ? userConfig.email : [userConfig.email];
+
+                    // II. check if email has special permissions
+                    if (!aEmails.some(email => email.toLowerCase() === user.email.toLowerCase())) continue;
+                }
 
 				// d. validate or skip
 				if (!DataUtils.isObject(userConfig.customUserClaims)) continue;
