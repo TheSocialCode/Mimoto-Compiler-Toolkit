@@ -91,8 +91,10 @@ class CustomClaims
 		this._sRegion = sRegion || 'us-central1';
 		this._config = config;
 
+		console.log(this._config);
+
         // 2. validate config object
-        if (!this._config || typeof this._config !== 'object' || typeof this._config['claims'] !== 'object' || typeof this._config['claims']['data'] !== 'object')
+        if (!this._config || typeof this._config !== 'object' || typeof this._config['claims'] !== 'object' || typeof this._config['claims']['users'] !== 'object')
         {
             // a. report
             console.log('🚨 - WARNING - Please provide a valid config object')
@@ -102,10 +104,10 @@ class CustomClaims
         }
 
         // 3. validate config object's data property
-        if (!this._config['claims']['data']['userPath'] || !this._config['claims']['data']['userCustomClaimsProperty']  || !this._config['claims']['data']['userCustomClaimsKey'])
+        if (!this._config['claims']['groups']['query'] || !this._config['claims']['data']['userCustomClaimsProperty']  || !this._config['claims']['data']['userCustomClaimsKey'])
         {
             // a. report
-            console.log('🚨 - WARNING - Please add userPath, userCustomClaimsProperty, and userCustomClaimsKey to the config object')
+            console.log('🚨 - WARNING - Please add claims.groups.query, userCustomClaimsProperty, and userCustomClaimsKey to the config object')
 
             // b. exit
             return;
@@ -123,10 +125,10 @@ class CustomClaims
      * Set user's special custom claims
      * @returns Firebase function event listener
      */
-    setSpecialClaims()
+    onCreateUser()
 	{
         // 1. validate
-        if (!this._config || typeof this._config !== 'object' || typeof this._config['claims'] !== 'object' || typeof this._config['claims']['special'] !== 'object')
+        if (typeof this._config?.claims?.users?.super !== 'object')
         {
             // a. report
             console.log('🚨 - WARNING - Please provide a valid config object')
@@ -138,11 +140,11 @@ class CustomClaims
         // 2. set and return listener
 		return this._functions.region(this._sRegion).auth.user().onCreate(async (user) => {
 
-			// a. set special permissions
-			await this._setSpecialCustomClaims(user);
+			// a. set superuser permissions
+			await this._setSuperuserCustomClaims(user);
 
 			// b. set custom claims for new user based on items in database
-			await this._setCustomClaimsFromData(user);
+			await this._setAllUsersCustomClaims(user);
 
             // c. end
             return null;
@@ -153,10 +155,12 @@ class CustomClaims
      * Set user custom claims based on data
      * @returns Firebase function event listener
      */
-	setDataClaims()
+    onWriteGroupMember()
 	{
+		return null;
+
         // 1. set and return listener
-		return this._functions.region(this._sRegion).database.ref(this._config['claims']['data']['userPath'] + '/{sUserID}').onWrite(async (data, context) => {
+		return this._functions.region(this._sRegion).database.ref(this._config['claims']['groups']['query'] + '/{sUserID}').onWrite(async (data, context) => {
 
             // a. init
             let user = null;
@@ -196,24 +200,24 @@ class CustomClaims
 
 
 	/**
-	 * Set special permissions for one or more users
+	 * Set superuser permissions for one or more users
 	 * WARNING - USER NEEDS TO SIGN OUT AND SIGN IN TO REFRESH TOKEN
 	 * @param user
 	 * @returns {Promise<unknown>}
 	 * @private
 	 */
-	_setSpecialCustomClaims(user)
+	_setSuperuserCustomClaims(user)
 	{
 		return new Promise(async (resolve, reject) => {
 
 			// 1. register
-			let aUsers = this._config['claims']['special'];
+			let aUsers = this._config['claims']['users']['super'];
 
 			// 2. verify and convert to array
-			if (DataUtils.isObject(aUsers)) aUsers = [this._config['claims']['special']];
+			if (DataUtils.isObject(aUsers)) aUsers = [this._config['claims']['users']['super']];
 
 			// 3. validate
-			if (!Array.isArray(aUsers)) reject('special custom claims config needs to be either an object or an array of objects');
+			if (!Array.isArray(aUsers)) reject('Superuser custom claims config needs to be either an object or an array of objects');
 
 			// 4. find user
 			for (let nIndex = 0; nIndex < aUsers.length; nIndex++)
@@ -230,15 +234,19 @@ class CustomClaims
                     // I. convert to array
                     let aEmails = (Array.isArray(userConfig.email)) ? userConfig.email : [userConfig.email];
 
-                    // II. check if email has special permissions
+
+					// validate email
+
+
+                    // II. check if email is marked as superuser
                     if (!aEmails.some(email => email.toLowerCase() === user.email.toLowerCase())) continue;
                 }
 
 				// d. validate or skip
-				if (!DataUtils.isObject(userConfig.customUserClaims)) continue;
+				if (!DataUtils.isObject(userConfig.data)) continue;
 
 				// e. set custom claim for the user
-				await this._admin.auth().setCustomUserClaims(user.uid, userConfig.customUserClaims);
+				await this._admin.auth().setCustomUserClaims(user.uid, userConfig.data);
 			}
 
             // 5. exit
@@ -252,7 +260,7 @@ class CustomClaims
      * @returns {Promise<unknown>}
      * @private
      */
-	_setCustomClaimsFromData(user)
+    _setAllUsersCustomClaims(user)
 	{
 		return new Promise(async (resolve, reject) => {
 
@@ -359,6 +367,124 @@ class CustomClaims
         // 7. store
         await this._admin.auth().setCustomUserClaims(userRecord.uid, currentUserClaims);
     }
+
+	/**
+	 * Check if email is allowed
+	 * @author - Sebastian Kersten
+	 * @author - ChatGPT
+	 * @param email
+	 * @param config
+	 * @returns {*|boolean}
+	 */
+	async isEmailAllowed(email, config) {
+		// Convert the input email to lowercase
+		const lowerCaseEmail = email.toLowerCase();
+
+		// Helper function to handle both async and direct functions
+		const executeFunction = async (func, email) => {
+			const result = func(email);
+			// Check if the function returns a Promise and await it if so
+			return result instanceof Promise ? await result : result;
+		};
+
+		// If config is empty, allow all emails
+		if (!config || (Array.isArray(config) && config.length === 0)) {
+			return true;
+		}
+
+		// If config is a string, compare it in lowercase
+		if (typeof config === 'string') {
+			return lowerCaseEmail === config.toLowerCase();
+		}
+
+		// If config is a function, call it with the email
+		if (typeof config === 'function') {
+			return await executeFunction(config, lowerCaseEmail);
+		}
+
+		// If config is an array, check each element
+		if (Array.isArray(config)) {
+			for (const rule of config) {
+				// If the rule is a string, compare it in lowercase
+				if (typeof rule === 'string' && lowerCaseEmail === rule.toLowerCase()) {
+					return true;
+				}
+
+				// If the rule is a RegExp, test the email against it
+				if (rule instanceof RegExp && rule.test(lowerCaseEmail)) {
+					return true;
+				}
+
+				// If the rule is a function, call it with the email
+				if (typeof rule === 'function' && await executeFunction(rule, lowerCaseEmail)) {
+					return true;
+				}
+			}
+			// If no rule matched, return false
+			return false;
+		}
+
+		// If config is none of the above, return false
+		return false;
+	}
+
+	/**
+	 * Process data object with async functions, values and objects
+	 * @author - Sebastian Kersten
+	 * @author - ChatGPT
+	 * @param data
+	 * @returns {Promise<*|{}>}
+	 */
+	async processDataObject(data)
+	{
+		// Helper function to handle both async and direct functions
+		const executeFunction = async (func) => {
+			const result = func();
+			// Check if the function returns a Promise and await it if so
+			return result instanceof Promise ? await result : result;
+		};
+
+		// Recursive function to process each value in the object
+		const processValue = async (value) => {
+			if (typeof value === 'function') {
+				// If the value is a function, execute it
+				return await executeFunction(value);
+			} else if (value && typeof value === 'object' && !Array.isArray(value)) {
+				// If the value is an object, recursively process each property
+				const processedObject = {};
+				for (const key in value) {
+					processedObject[key] = await processValue(value[key]);
+				}
+				return processedObject;
+			} else {
+				// If the value is neither a function nor an object, return it as is
+				return value;
+			}
+		};
+
+		return await processValue(data);
+	}
+
+	/**
+	 * Process id with async functions and values
+	 * @author - Sebastian Kersten
+	 * @author - ChatGPT
+	 * @param id
+	 * @returns {Promise<*>}
+	 */
+	async processId(id)
+	{
+		// Helper function to execute and possibly await the function
+		const executeFunction = async (func) => {
+			const result = func();
+			// Check if the function returns a Promise and await it if so
+			return result instanceof Promise ? await result : result;
+		};
+
+		// If the id is a function, execute it. Otherwise, return it as is.
+		return typeof id === 'function' ? await executeFunction(id) : id;
+	}
+
 }
 
 
