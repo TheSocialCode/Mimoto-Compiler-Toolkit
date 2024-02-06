@@ -97,21 +97,21 @@ class CustomClaims
         if (!this._config || typeof this._config !== 'object' || typeof this._config['claims'] !== 'object' || typeof this._config['claims']['users'] !== 'object')
         {
             // a. report
-            console.log('🚨 - WARNING - Please provide a valid config object')
+            console.log('🚨 - WARNING - Please provide a valid config object containing a claims.users object')
 
             // b. exit
             return;
         }
 
         // 3. validate config object's data property
-        if (!this._config['claims']['groups']['query'] || !this._config['claims']['data']['userCustomClaimsProperty']  || !this._config['claims']['data']['userCustomClaimsKey'])
-        {
-            // a. report
-            console.log('🚨 - WARNING - Please add claims.groups.query, userCustomClaimsProperty, and userCustomClaimsKey to the config object')
-
-            // b. exit
-            return;
-        }
+        // if (!this._config['claims']['groups']['query'] || !this._config['claims']['data']['userCustomClaimsProperty']  || !this._config['claims']['data']['userCustomClaimsKey'])
+        // {
+        //     // a. report
+        //     console.log('🚨 - WARNING - Please add claims.groups.query, userCustomClaimsProperty, and userCustomClaimsKey to the config object')
+		//
+        //     // b. exit
+        //     return;
+        // }
 	}
 
 
@@ -127,26 +127,24 @@ class CustomClaims
      */
     onCreateUser()
 	{
-        // 1. validate
-        if (typeof this._config?.claims?.users?.super !== 'object')
-        {
-            // a. report
-            console.log('🚨 - WARNING - Please provide a valid config object')
-
-            // b. exit
-            return;
-        }
-
-        // 2. set and return listener
 		return this._functions.region(this._sRegion).auth.user().onCreate(async (user) => {
 
-			// a. set superuser permissions
-			await this._setSuperuserCustomClaims(user);
+			// a. register
+			const usersConfig = this._config.claims.users;
 
-			// b. set custom claims for new user based on items in database
-			await this._setAllUsersCustomClaims(user);
+			// b. set superuser permissions (email is required to avoid making everybody a superuser)
+			if (usersConfig.super && usersConfig.super.email) user = await this._setUserCustomClaims(user, usersConfig.super);
 
-            // c. end
+			// c. verify if user is not a superuser
+			const bIsEmailAllowed = await this._isEmailAllowed(user.email, usersConfig.super?.email);
+
+			// d. set permissions for all users except superusers
+			if (usersConfig.other && !bIsEmailAllowed) user = await this._setUserCustomClaims(user, usersConfig.other);
+
+			// e. set permissions for all users
+			if (usersConfig.all) user = await this._setUserCustomClaims(user, usersConfig.all);
+
+			// f. end
             return null;
 		});
 	}
@@ -200,104 +198,34 @@ class CustomClaims
 
 
 	/**
-	 * Set superuser permissions for one or more users
+	 * Set permissions for one or more users
 	 * WARNING - USER NEEDS TO SIGN OUT AND SIGN IN TO REFRESH TOKEN
 	 * @param user
+	 * @param config
 	 * @returns {Promise<unknown>}
 	 * @private
 	 */
-	_setSuperuserCustomClaims(user)
+	_setUserCustomClaims(user, config)
 	{
 		return new Promise(async (resolve, reject) => {
 
-			// 1. register
-			let aUsers = this._config['claims']['users']['super'];
+			// 1. validate or exit
+			if (!config.data) return resolve(user);
 
-			// 2. verify and convert to array
-			if (DataUtils.isObject(aUsers)) aUsers = [this._config['claims']['users']['super']];
+			// 2. validate if user is allowed or exit
+			if (await this._isEmailAllowed(user.email, config.email) === false) return resolve(user);
 
-			// 3. validate
-			if (!Array.isArray(aUsers)) reject('Superuser custom claims config needs to be either an object or an array of objects');
+			// 3. process data
+			const customClaims = await this._processDataObject(config.data);
 
-			// 4. find user
-			for (let nIndex = 0; nIndex < aUsers.length; nIndex++)
-			{
-				// a. register
-				let userConfig = aUsers[nIndex];
+			// 4. add custom claims for the user
+			await this._admin.auth().setCustomUserClaims(user.uid, DataUtils.mergeDeep(user.customClaims, customClaims));
 
-				// b. validate or skip
-				if (!DataUtils.isObject(userConfig)) continue;
-
-				// c. validate and skip
-				if (!userConfig.email)
-                {
-                    // I. convert to array
-                    let aEmails = (Array.isArray(userConfig.email)) ? userConfig.email : [userConfig.email];
-
-
-					// validate email
-
-
-                    // II. check if email is marked as superuser
-                    if (!aEmails.some(email => email.toLowerCase() === user.email.toLowerCase())) continue;
-                }
-
-				// d. validate or skip
-				if (!DataUtils.isObject(userConfig.data)) continue;
-
-				// e. set custom claim for the user
-				await this._admin.auth().setCustomUserClaims(user.uid, userConfig.data);
-			}
-
-            // 5. exit
-            resolve();
+			// 5. get and send updated user
+			this._admin.auth().getUser(user.uid)
+				.then(updatedUser => resolve(updatedUser))
+				.catch(error => resolve(user));
 		});
-	}
-
-    /**
-     * Set custom claims for a user based on data
-     * @param user
-     * @returns {Promise<unknown>}
-     * @private
-     */
-    _setAllUsersCustomClaims(user)
-	{
-		return new Promise(async (resolve, reject) => {
-
-			// 1. connect
-			const ref = this._realtimeDatabase.ref(this._config['claims']['data']['userPath']);
-
-			// 2. load
-			ref.orderByChild('email').equalTo(user.email).once('value')
-				.then(async snapshot => {
-
-					// a. exit is no user registered
-					if (!snapshot.exists()) { resolve(); return; }
-
-					// b. register
-					const teamMembers = snapshot.val();
-
-					// c. isolate
-					let teamMember = teamMembers[Object.keys(teamMembers)[0]];
-
-					// d. find
-					let userRecord = await this._admin.auth().getUserByEmail(user.email)
-
-					// e. load
-					let userClaims = userRecord.customClaims || {};
-
-					// f. merge
-					userClaims = DataUtils.mergeDeep(userClaims, teamMember[this._config['claims']['data']['userCustomClaimsKey']] || {});
-
-					// g. store updates claims
-					await this._admin.auth().setCustomUserClaims(userRecord.uid, userClaims);
-
-					// h. report ready
-					resolve();
-
-				})
-				.catch(error => reject(error));
-		})
 	}
 
     /**
@@ -376,55 +304,49 @@ class CustomClaims
 	 * @param config
 	 * @returns {*|boolean}
 	 */
-	async isEmailAllowed(email, config) {
+	async _isEmailAllowed(email, config)
+	{
 		// Convert the input email to lowercase
 		const lowerCaseEmail = email.toLowerCase();
 
+		// If config is not an array, make it an array
+		if (!Array.isArray(config)) {
+			config = [config];
+		}
+
 		// Helper function to handle both async and direct functions
-		const executeFunction = async (func, email) => {
-			const result = func(email);
+		const executeFunction = async (func) => {
+			const result = func(lowerCaseEmail);
 			// Check if the function returns a Promise and await it if so
 			return result instanceof Promise ? await result : result;
 		};
 
-		// If config is empty, allow all emails
-		if (!config || (Array.isArray(config) && config.length === 0)) {
-			return true;
-		}
+		// Process each element in the config array
+		for (const rule of config) {
+			// If config is empty, allow all emails
+			if (!rule) {
+				return true;
+			}
 
-		// If config is a string, compare it in lowercase
-		if (typeof config === 'string') {
-			return lowerCaseEmail === config.toLowerCase();
-		}
-
-		// If config is a function, call it with the email
-		if (typeof config === 'function') {
-			return await executeFunction(config, lowerCaseEmail);
-		}
-
-		// If config is an array, check each element
-		if (Array.isArray(config)) {
-			for (const rule of config) {
-				// If the rule is a string, compare it in lowercase
-				if (typeof rule === 'string' && lowerCaseEmail === rule.toLowerCase()) {
+			// If the rule is a string, compare it in lowercase
+			if (typeof rule === 'string') {
+				if (lowerCaseEmail === rule.toLowerCase()) {
 					return true;
 				}
-
+			} else if (rule instanceof RegExp) {
 				// If the rule is a RegExp, test the email against it
-				if (rule instanceof RegExp && rule.test(lowerCaseEmail)) {
+				if (rule.test(lowerCaseEmail)) {
 					return true;
 				}
-
-				// If the rule is a function, call it with the email
-				if (typeof rule === 'function' && await executeFunction(rule, lowerCaseEmail)) {
+			} else if (typeof rule === 'function') {
+				// If the rule is a function, call it and check the result
+				if (await executeFunction(rule)) {
 					return true;
 				}
 			}
-			// If no rule matched, return false
-			return false;
 		}
 
-		// If config is none of the above, return false
+		// If no rule matched, return false
 		return false;
 	}
 
@@ -435,7 +357,7 @@ class CustomClaims
 	 * @param data
 	 * @returns {Promise<*|{}>}
 	 */
-	async processDataObject(data)
+	async _processDataObject(data)
 	{
 		// Helper function to handle both async and direct functions
 		const executeFunction = async (func) => {
@@ -472,7 +394,7 @@ class CustomClaims
 	 * @param id
 	 * @returns {Promise<*>}
 	 */
-	async processId(id)
+	async _processId(id)
 	{
 		// Helper function to execute and possibly await the function
 		const executeFunction = async (func) => {
