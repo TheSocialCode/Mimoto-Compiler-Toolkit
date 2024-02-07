@@ -16,7 +16,7 @@
         "chokidar": "^3.5.3",
         "jsdom": "^22.1.0",
         "mimoto": "^1.0.27",
-        "openai": "^3.2.1",
+        "openai": "^4.24.1",
         "shelljs": "^0.8.5"
     },
     "repository": {
