@@ -91,8 +91,6 @@ class CustomClaims
 		this._sRegion = sRegion || 'us-central1';
 		this._config = config;
 
-		console.log(this._config);
-
         // 2. validate config object
         if (!this._config || typeof this._config !== 'object' || typeof this._config['claims'] !== 'object' || typeof this._config['claims']['users'] !== 'object')
         {
@@ -131,6 +129,7 @@ class CustomClaims
 
 			// a. register
 			const usersConfig = this._config.claims.users;
+			const groupsConfig = this._config.claims.groups;
 
 			// b. set superuser permissions (email is required to avoid making everybody a superuser)
 			if (usersConfig.super && usersConfig.super.email) user = await this._setUserCustomClaims(user, usersConfig.super);
@@ -144,10 +143,164 @@ class CustomClaims
 			// e. set permissions for all users
 			if (usersConfig.all) user = await this._setUserCustomClaims(user, usersConfig.all);
 
-			// f. end
+			// f. initiate group
+			if (groupsConfig) user = await this._createGroup(user, groupsConfig); // chekc all invites, check all groups, check all members
+
+			// g. end
             return null;
 		});
 	}
+
+	_createGroup(user, groupsConfig)
+	{
+
+
+		console.log('groupsConfig =', groupsConfig);
+
+
+		// if not in members -> create group
+		//      handle onCreate
+		//      store group in database
+		//      add member with groupid in database
+		// else
+		//     add to group(s)
+
+
+		// groups/invites -> auto load latest claims
+		// groups/members
+
+
+
+		return new Promise(async (resolve, reject) => {
+
+
+			// check queries
+
+			if (!groupsConfig.queries || !groupsConfig.queries.groups || !groupsConfig.queries.members) return reject('No queries found in the groupsConfig object');
+
+
+			const sGroupsQuery = groupsConfig.queries.groups;
+			const sMembersQuery = groupsConfig.queries.members;
+
+
+			const dbMembers = this._admin.database().ref(sMembersQuery + '/' + user.uid);
+
+			const memberSnapshot = await dbMembers.once('value');
+
+
+			if (!memberSnapshot.exists())
+			{
+
+				//      handle onCreate
+				//      store group in database
+				//      add member with groupid in database
+
+
+
+				// define ID or default on key (set current key)
+
+
+
+				// get data
+
+
+				let member = {
+					name: user.displayName,
+					email: user.email
+				}
+
+				if (groupsConfig.onCreate && groupsConfig.onCreate.data) member = DataUtils.mergeDeep(groupsConfig.onCreate.data, member);
+
+
+
+
+				let sGroupID = await this._processId(groupsConfig.id, user.email) || null;
+
+
+				let bGroupExists = false;
+
+
+				if (sGroupID === null)
+				{
+					// prepare
+					const dbGroups = this._admin.database().ref(sGroupsQuery);
+
+					let members = {};
+					members[user.uid] = member;
+
+					await dbGroups.push(members);
+				}
+				else
+				{
+					// prepare
+					const dbGroups = this._admin.database().ref(sGroupsQuery + '/' + sGroupID);
+
+
+					let groupsSnapshot = await dbGroups.once('value');
+
+
+
+					let members = (groupsSnapshot.exists()) ? groupsSnapshot.val() : {};
+					members[user.uid] = member;
+
+
+					bGroupExists = groupsSnapshot.exists();
+
+
+					await dbGroups.set(members);
+				}
+
+
+				const memberGroups = {}
+				memberGroups[sGroupID] = true;
+
+				await dbMembers.set(memberGroups);
+
+
+				const sCurrentGroupKey = (groupsConfig.currentGroupKey || 'currentGroup');
+
+				let userGroupCustomClaims = {}
+				userGroupCustomClaims[sCurrentGroupKey] = sGroupID;
+
+
+				let memberCustomClaims = {};
+
+				if (!bGroupExists)
+				{
+					if (groupsConfig.onCreate && groupsConfig.onCreate.data) memberCustomClaims = groupsConfig.onCreate.data;
+				}
+				else
+				{
+					if (groupsConfig.onAdd && groupsConfig.onAdd.data) memberCustomClaims = groupsConfig.onAdd.data;
+				}
+
+				user = await this._storeUserCustomClaims(user, DataUtils.mergeDeep(memberCustomClaims, userGroupCustomClaims));
+
+			}
+			else
+			{
+
+				const member = memberSnapshot.val();
+
+
+
+
+
+				//this._storeUserCustomClaims(user, data)
+
+
+
+				//     add to existing group(s)
+
+			}
+
+
+			resolve(user);
+
+		});
+
+	}
+
 
     /**
      * Set user custom claims based on data
@@ -155,6 +308,8 @@ class CustomClaims
      */
     onWriteGroupMember()
 	{
+		console.log('onWriteGroupMember');
+
 		return null;
 
         // 1. set and return listener
@@ -218,10 +373,21 @@ class CustomClaims
 			// 3. process data
 			const customClaims = await this._processDataObject(config.data);
 
-			// 4. add custom claims for the user
-			await this._admin.auth().setCustomUserClaims(user.uid, DataUtils.mergeDeep(user.customClaims, customClaims));
+			// 4. store user custom claims
+			this._storeUserCustomClaims(user, customClaims)
+				.then(updatedUser => resolve(updatedUser))
+				.catch(error => resolve(user));
+		});
+	}
 
-			// 5. get and send updated user
+	_storeUserCustomClaims(user, data)
+	{
+		return new Promise(async (resolve, reject) => {
+
+			// 1. store
+			await this._admin.auth().setCustomUserClaims(user.uid, DataUtils.mergeDeep(user.customClaims, data));
+
+			// 2. load latest user data
 			this._admin.auth().getUser(user.uid)
 				.then(updatedUser => resolve(updatedUser))
 				.catch(error => resolve(user));
@@ -238,6 +404,8 @@ class CustomClaims
 	_getRegisteredUser(firebaseAdmin, sEmail)
 	{
 		return new Promise(async (resolve, reject) => {
+
+			if (!sEmail) return reject('No email provided');
 
 			await firebaseAdmin.auth().getUserByEmail(sEmail)
 				.then(async (userRecord) => {
@@ -394,17 +562,17 @@ class CustomClaims
 	 * @param id
 	 * @returns {Promise<*>}
 	 */
-	async _processId(id)
+	async _processId(id, sEmail)
 	{
 		// Helper function to execute and possibly await the function
 		const executeFunction = async (func) => {
-			const result = func();
+			const result = func(sEmail);
 			// Check if the function returns a Promise and await it if so
 			return result instanceof Promise ? await result : result;
 		};
 
 		// If the id is a function, execute it. Otherwise, return it as is.
-		return typeof id === 'function' ? await executeFunction(id) : id;
+		return typeof id === 'function' ? await executeFunction(id, sEmail) : id;
 	}
 
 }
