@@ -188,6 +188,13 @@ class CustomClaims
 			const memberSnapshot = await dbMembers.once('value');
 
 
+
+			let sGroupID = await this._processId(groupsConfig.id, user.email) || null;
+
+
+
+
+
 			if (!memberSnapshot.exists())
 			{
 
@@ -212,9 +219,9 @@ class CustomClaims
 				if (groupsConfig.onCreate && groupsConfig.onCreate.data) member = DataUtils.mergeDeep(groupsConfig.onCreate.data, member);
 
 
+				
 
-
-				let sGroupID = await this._processId(groupsConfig.id, user.email) || null;
+				// let sGroupID = await this._processId(groupsConfig.id, user.email) || null;
 
 
 				let bGroupExists = false;
@@ -253,6 +260,9 @@ class CustomClaims
 
 				const memberGroups = {}
 				memberGroups[sGroupID] = true;
+
+
+				// user email
 
 				await dbMembers.set(memberGroups);
 
@@ -310,20 +320,31 @@ class CustomClaims
 	{
 		console.log('onWriteGroupMember');
 
-		return null;
+		// return null;
+
+		const sGroupsQuery = this._config['claims']['groups']['queries']['groups'];
+
 
         // 1. set and return listener
-		return this._functions.region(this._sRegion).database.ref(this._config['claims']['groups']['query'] + '/{sUserID}').onWrite(async (data, context) => {
+		return this._functions.region(this._sRegion).database.ref(sGroupsQuery + '/{sGroupID}/sUserID').onWrite(async (data, context) => {
 
             // a. init
             let user = null;
             let newCustomClaims = {};
+
+
+			console.log('data BEFORE =', data.before.val());
+			console.log('data AFTER =', data.after.val());
+			console.log('sGroupID =', context.param.sGroupID);
+			console.log('sUserID =', context.param.sUserID);
 
             // b. check if item deleted
             if (data.before.val() && !data.after.val())
             {
                 // I. register
                 user = data.before.val();
+
+	            console.log('User - email =', user.email, ', id =', user.uid);
 
                 // I. reset
                 newCustomClaims = this._config['claims']['data']['userReset'];
@@ -332,6 +353,9 @@ class CustomClaims
             {
                 // I. register
                 user = data.after.val();
+
+	            console.log('User - email =', user.email, ', id =', user.uid);
+
 
                 // II. set
                 if (this._config['claims']['data']['userCustomClaimsProperty']) newCustomClaims = user[this._config['claims']['data']['userCustomClaimsProperty']];
