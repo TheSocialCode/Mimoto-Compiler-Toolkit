@@ -219,7 +219,7 @@ class CustomClaims
 				if (groupsConfig.onCreate && groupsConfig.onCreate.data) member = DataUtils.mergeDeep(groupsConfig.onCreate.data, member);
 
 
-				
+
 
 				// let sGroupID = await this._processId(groupsConfig.id, user.email) || null;
 

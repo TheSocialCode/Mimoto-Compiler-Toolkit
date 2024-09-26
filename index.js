@@ -29,6 +29,10 @@ if (bIsCloning) return;
 // --- core functions
 
 
+
+// ADD - Promise
+
+
 // 4. load configuration file mimoto.config.json
 const config = (() =>
 {
