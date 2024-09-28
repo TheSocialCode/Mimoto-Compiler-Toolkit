@@ -13,15 +13,58 @@ const DistributeMimoto = require('./src/DistributeMimoto');
 const CombineTemplates = require('./src/CombineTemplates');
 const CloneFile = require('./src/CloneFile');
 
+// 3. import 3rd party classes
+const inquirer = require('inquirer');
+
+
+
+// ----------------------------------------------------------------------------
+// --- Startup ----------------------------------------------------------------
+// ----------------------------------------------------------------------------
 
 
 
 
 // Get the command (second argument)
-const sCommand = process.argv[0];
+let sCommand = process.argv[2];
 
 // Get the full list of arguments
-const aArgs = process.argv.slice(3);
+const aArgs = process.argv.slice(2);
+
+
+if (!sCommand)
+{
+    const questions = [
+        {
+            type: 'list',
+            name: 'framework',
+            message: 'What would you like me to do?',
+            choices: ['run', 'clone', 'init'],
+        }
+    ];
+
+// Function to initialize the project
+    async function init() {
+        try {
+            // Prompt the user with the question and wait for the response
+            const answers = await inquirer.prompt(questions);
+
+            // Display the selected framework
+            console.log(`You selected: ${answers.framework}`);
+
+            return answers.framework;
+
+        } catch (error) {
+            console.error("Error during project initialization:", error);
+        }
+    }
+
+// Run the function
+    sCommand = init();
+}
+
+
+console.log('sCommand = ', sCommand);
 
 
 // Check which command was passed and call the appropriate function
@@ -39,6 +82,10 @@ switch (sCommand.toLowerCase()) {
 
         break;
     case 'compile':
+
+
+        // mimoto run
+
     default:
 
         // 4. load configuration file mimoto.config.json
