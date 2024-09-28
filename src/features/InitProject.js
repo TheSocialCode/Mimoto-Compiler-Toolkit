@@ -10,7 +10,7 @@ const path = require('path');
 const shell = require('shelljs');
 
 // import Mimoto util classes
-const DataUtils = require("../toolkit/utils/DataUtils");
+const DataUtils = require("../../toolkit/utils/DataUtils");
 
 
 class InitProject

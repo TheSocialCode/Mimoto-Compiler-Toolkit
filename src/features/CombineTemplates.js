@@ -10,7 +10,7 @@ const fs = require('fs');
 const path = require('path');
 
 // import Mimoto util classes
-const DataUtils = require("../toolkit/utils/DataUtils");
+const DataUtils = require("../../toolkit/utils/DataUtils");
 
 
 class CombineTemplates
