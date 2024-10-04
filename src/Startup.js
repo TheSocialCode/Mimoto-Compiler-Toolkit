@@ -38,10 +38,6 @@ class Startup
 	 */
 	constructor(sCommand, aArgs)
 	{
-        console.log('sCommand = ', sCommand);
-        console.log('aArgs = ', aArgs);
-
-
         // 1. update inquirer to latest version
 
         if (!sCommand)
@@ -86,9 +82,12 @@ class Startup
 
                 // Determine the target directory for initialization
                 let sTargetDir;
-                if (process.cwd() === path.dirname(require.main.filename)) {
-                    // We're running from the npm package root
-                    sTargetDir = path.join(process.cwd(), 'cache');
+                const cliPath = path.resolve(process.argv[1]);
+                const cliDir = path.dirname(cliPath);
+
+                if (cliDir === process.cwd()) {
+                    // We're running from the directory containing cli.js
+                    sTargetDir = path.join(cliDir, 'cache');
                     // Ensure the cache directory exists
                     if (!fs.existsSync(sTargetDir)) {
                         fs.mkdirSync(sTargetDir);
@@ -100,7 +99,10 @@ class Startup
 
 
                 console.log('sTargetDir = ', sTargetDir);
-                //initProject.init();
+
+
+                initProject.init(sTargetDir);
+
                 break;
 
             case 'clone':

@@ -12,8 +12,6 @@ const { exec, spawn } = require('child_process');
 const readline = require('readline');
 const firebase = require('firebase-tools');
 
-// Import Mimoto util classes
-const CompilerUtils = require('../utils/CompilerUtils');
 
 class InitProject
 {
