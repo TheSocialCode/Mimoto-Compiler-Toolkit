@@ -81,9 +81,28 @@ class Startup
             case 'init':
 
 
-                new InitProject();
+                let initProject = new InitProject();
 
+
+                // Determine the target directory for initialization
+                let sTargetDir;
+                if (process.cwd() === path.dirname(require.main.filename)) {
+                    // We're running from the npm package root
+                    sTargetDir = path.join(process.cwd(), 'cache');
+                    // Ensure the cache directory exists
+                    if (!fs.existsSync(sTargetDir)) {
+                        fs.mkdirSync(sTargetDir);
+                    }
+                } else {
+                    // We're running from elsewhere, use the current directory
+                    sTargetDir = process.cwd();
+                }
+
+
+                console.log('sTargetDir = ', sTargetDir);
+                //initProject.init();
                 break;
+
             case 'clone':
 
                 // check if args 0 en 1 gezet en exist?

@@ -1,0 +1,55 @@
+{
+  "database": {
+    "rules": "database.rules.json"
+  },
+  "hosting": {
+    "headers": [
+      {
+        "source": "/**",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "public, max-age=3600, s-maxage=3600"
+          }
+        ]
+      }
+    ],
+    "public": "public",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
+  },
+  "emulators": {
+    "auth": {
+      "port": 9010
+    },
+    "functions": {
+      "port": 9011
+    },
+    "firestore": {
+      "port": 9012
+    },
+    "database": {
+      "port": 9013
+    },
+    "hosting": {
+      "port": 9014
+    },
+    "ui": {
+      "enabled": true,
+      "port": 9015
+    },
+    "singleProjectMode": true
+  },
+  "functions": {
+    "source": "functions"
+  }
+}

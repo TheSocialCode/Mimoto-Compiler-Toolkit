@@ -25,16 +25,22 @@ Place a config file named **mimoto.config.json** in the root of your project
 npx mimoto
 ```
 
+
+# Start a project
+In the root of the new project folder, run:
+``` 
+node cli.js init
+
 # During development
 In the root of the project, run:
 ``` 
-node cli.js -root example
+node cli.js root example
 ```
 
 # Utility function
 Watch and auto-clone a file
 ``` 
-npx mimoto -clone <file_to_watch> <clone_destination>
+npx mimoto clone <file_to_watch> <clone_destination>
 ```
 
 

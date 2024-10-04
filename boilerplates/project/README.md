@@ -1,0 +1,1 @@
+# Mimoto - Project boilerplate

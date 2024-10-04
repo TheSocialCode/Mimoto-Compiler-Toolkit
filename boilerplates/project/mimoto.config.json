@@ -1,0 +1,17 @@
+{
+    "combine": {
+        "sources": [
+            "src/html"
+        ],
+        "output": "public/static/html/Templates.dist.html"
+    },
+    "components": {
+        "mimoto": {
+            "ConfirmDialog": "components/v1/dialogs/ConfirmDialog"
+        }
+    },
+    "mimoto": {
+        "version": "1.0.0",
+        "target": "public/static/js/thesocialcode/mimoto"
+    }
+}
