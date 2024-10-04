@@ -13,13 +13,13 @@
         "mimoto": "cli.js"
     },
     "dependencies": {
-        "chokidar": "^3.5.3",
+        "chokidar": "^4.0.1",
+        "execa": "^9.4.0",
         "firebase-tools": "^13.20.2",
         "fs-extra": "^11.2.0",
-        "inquirer": "^8.2.6",
-        "jsdom": "^22.1.0",
-        "openai": "^4.24.1",
-        "shelljs": "^0.8.5"
+        "inquirer": "^11.1.0",
+        "jsdom": "^25.0.1",
+        "openai": "^4.24.1"
     },
     "repository": {
         "type": "git",

@@ -7,10 +7,16 @@
 // import core classes
 const fs = require('fs');
 const path = require('path');
-const shell = require('shelljs');
 
 // import Mimoto util classes
 const DataUtils = require("../../toolkit/utils/DataUtils");
+
+let execa;
+
+// At the top of your file, import execa dynamically
+(async () => {
+  execa = (await import('execa')).default;
+})();
 
 
 class CloneFile
@@ -85,7 +91,7 @@ class CloneFile
 		if (!fs.existsSync(path.dirname(sDestinationFile))) fs.mkdirSync(path.dirname(sDestinationFile), { recursive: true });
 
 		// 2. copy the file to the destination
-		shell.cp(sFileToWatch, sDestinationFile);
+		execa.copy(sFileToWatch, sDestinationFile);
 
 		// 3. register
 		let end = new Date();

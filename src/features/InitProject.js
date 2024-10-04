@@ -6,18 +6,27 @@
 // Import core classes
 const fs = require('fs-extra');
 const path = require('path');
-const inquirer = require('inquirer');
-const shell = require('shelljs');
 const { exec, spawn } = require('child_process');
 const readline = require('readline');
 const firebase = require('firebase-tools');
+
 
 
 class InitProject
 {
 	constructor() {
         this.installChoice = null;
+		this._inquirer = null;
     }
+
+
+	async getInquirer() {
+		if (!this._inquirer) {
+		  const inquirerModule = await import('inquirer');
+		  this._inquirer = inquirerModule.default;
+		}
+		return this._inquirer;
+	  }
 
     /**
      * Checks for existing files and prompts the user for installation preferences
@@ -25,6 +34,7 @@ class InitProject
      * @returns {Promise<string>} The user's choice: 'clean', 'selective', or 'skip'
      */
     async checkExistingFiles(targetDir) {
+		const inquirer = await this.getInquirer();
         const files = await fs.readdir(targetDir);
         const existingFiles = files.filter(file => !file.startsWith('.'));
 
@@ -33,7 +43,7 @@ class InitProject
         }
 
 		console.log('\n');
-        console.log('The following files/folders already exist in the target directory:');
+		console.log('🌱 - \x1b[1mMimoto\x1b[0m 💬 - The following files/folders already exist in the target directory:');
         existingFiles.forEach(file => console.log(`- ${file}`));
 		console.log('\n');
 
@@ -60,9 +70,24 @@ class InitProject
      * @param {string} destPath - Destination path for the file/folder
      */
     async handleFileOperation(sourcePath, destPath) {
+		const inquirer = await this.getInquirer();
         switch (this.installChoice) {
             case 'clean':
-                await fs.copy(sourcePath, destPath, { overwrite: true });
+                const cacheDir = path.dirname(destPath);
+                const sourceDir = path.dirname(sourcePath);
+
+                // Remove the entire cache folder
+                await fs.remove(cacheDir);
+                
+                // Recreate the cache folder
+                await fs.ensureDir(cacheDir);
+                
+                // Copy all files from the source directory to the cache directory
+                await fs.copy(sourceDir, cacheDir, { overwrite: true });
+
+                // Log the list of copied files for debugging
+                const copiedFiles = await fs.readdir(cacheDir);
+
                 break;
             case 'selective':
                 if (await fs.pathExists(destPath)) {
@@ -92,6 +117,8 @@ class InitProject
      * @param {string} targetDir - The target directory for installation
      */
     async init(targetDir) {
+		const inquirer = await this.getInquirer();
+
         this.installChoice = await this.checkExistingFiles(targetDir);
 
         if (this.installChoice === 'cancel') {
@@ -149,15 +176,22 @@ class InitProject
         }
 
         try {
-            const files = await fs.readdir(sourceDir);
 
-            for (const file of files) {
-                const sourcePath = path.join(sourceDir, file);
-                const destPath = path.join(targetDir, file);
-                await this.handleFileOperation(sourcePath, destPath);
+            if (this.installChoice === 'skip') {
+                console.log('\n');
+                console.log('🌱 - \x1b[1mMimoto\x1b[0m 💬 - File syncing skipped.');
+            } else {
+                const files = await fs.readdir(sourceDir);
+
+                for (const file of files) {
+                    const sourcePath = path.join(sourceDir, file);
+                    const destPath = path.join(targetDir, file);
+                    await this.handleFileOperation(sourcePath, destPath);
+                }
+
+                console.log('\n');
+                console.log('🌱 - \x1b[1mMimoto\x1b[0m 💬 - File syncing completed successfully.');
             }
-
-            console.log('File syncing completed successfully.');
 
             // Ask if npm install should be run
             const shouldInstall = await this.shouldRunNpmInstall();
@@ -167,7 +201,7 @@ class InitProject
             }
 
             // Example: Initialize Firebase Emulators
-            await this.initializeFirebaseEmulators();
+            await this.initializeFirebaseEmulators(targetDir);
 
         } catch (error) {
             console.error('Error during file operations:', error);
@@ -182,6 +216,7 @@ class InitProject
 	 */
 	async copyTemplateWithConfirmation(sSourcePath, sDestinationPath)
 	{
+		const inquirer = await this.getInquirer();
 		try {
 			const aItems = fs.readdirSync(sSourcePath);
 
@@ -275,12 +310,20 @@ class InitProject
 
 	/**
 	 * Initializes Firebase Emulators with interactive input
+	 * @param {string} targetDir - The target directory for installation
 	 * @returns {Promise<void>}
 	 */
-	async initializeFirebaseEmulators() {
+	async initializeFirebaseEmulators(targetDir) {
 		console.log('Initializing Firebase Emulators...');
 		
+		const originalDir = process.cwd();
+		
 		try {
+			// Change to the target directory
+			process.chdir(targetDir);
+			
+			console.log(`Current working directory: ${process.cwd()}`);
+			
 			await firebase.init({
 				feature: 'emulators',
 				interactive: true
@@ -289,6 +332,9 @@ class InitProject
 		} catch (error) {
 			console.error('Error initializing Firebase Emulators:', error.message);
 			throw new Error('Firebase Emulators initialization failed');
+		} finally {
+			// Change back to the original directory
+			process.chdir(originalDir);
 		}
 	}
 
@@ -298,6 +344,7 @@ class InitProject
 	 * @returns {Promise<string>} The user's choice: 'clean', 'selective', or 'skip'
 	 */
 	async checkExistingFiles(targetDir) {
+		const inquirer = await this.getInquirer();
 		const files = await fs.readdir(targetDir);
 		const existingFiles = files.filter(file => !file.startsWith('.'));
 
@@ -305,9 +352,9 @@ class InitProject
 			return 'clean'; // No existing files, proceed with clean install
 		}
 
-		console.log('The following files/folders already exist in the target directory:');
+		console.log('🌱 - \x1b[1mMimoto\x1b[0m 💬 - The following files/folders already exist in the target directory:');
 		console.log('\n');
-		existingFiles.forEach(file => console.log(`- ${file}`));
+		existingFiles.forEach(file => console.log(`\t- ${file}`));
 		console.log('\n');
 
 		const { choice } = await inquirer.prompt([
@@ -335,8 +382,22 @@ class InitProject
 	async handleFileOperation(sourcePath, destPath) {
 		switch (this.installChoice) {
 			case 'clean':
-				await fs.copy(sourcePath, destPath, { overwrite: true });
-				break;
+				const cacheDir = path.dirname(destPath);
+                const sourceDir = path.dirname(sourcePath);
+
+                // Remove the entire cache folder
+                await fs.remove(cacheDir);
+                
+                // Recreate the cache folder
+                await fs.ensureDir(cacheDir);
+                
+                // Copy all files from the source directory to the cache directory
+                await fs.copy(sourceDir, cacheDir, { overwrite: true });
+
+                // Log the list of copied files for debugging
+                const copiedFiles = await fs.readdir(cacheDir);
+
+                break;
 			case 'selective':
 				if (await fs.pathExists(destPath)) {
 					const { overwrite } = await inquirer.prompt([
@@ -385,15 +446,21 @@ class InitProject
 		}
 
 		try {
-			const files = await fs.readdir(sourceDir);
+			if (this.installChoice === 'skip') {
+                console.log('\n');
+                console.log('🌱 - \x1b[1mMimoto\x1b[0m 💬 - File syncing skipped.');
+            } else {
+                const files = await fs.readdir(sourceDir);
 
-			for (const file of files) {
-				const sourcePath = path.join(sourceDir, file);
-				const destPath = path.join(targetDir, file);
-				await this.handleFileOperation(sourcePath, destPath);
-			}
+                for (const file of files) {
+                    const sourcePath = path.join(sourceDir, file);
+                    const destPath = path.join(targetDir, file);
+                    await this.handleFileOperation(sourcePath, destPath);
+                }
 
-			console.log('File syncing completed successfully.');
+                console.log('\n');
+                console.log('🌱 - \x1b[1mMimoto\x1b[0m 💬 - File syncing completed successfully.');
+            }
 
 			// Ask if npm install should be run
 			const shouldInstall = await this.shouldRunNpmInstall();
@@ -403,7 +470,7 @@ class InitProject
 			}
 
 			// Example: Initialize Firebase Emulators
-			await this.initializeFirebaseEmulators();
+			await this.initializeFirebaseEmulators(targetDir);
 
 		} catch (error) {
 			console.error('Error during file operations:', error);
@@ -416,16 +483,19 @@ class InitProject
 	 * @returns {Promise<boolean>}
 	 */
 	async shouldRunNpmInstall() {
+		const inquirer = await this.getInquirer();
+
 		console.log('\n');
-		const { runNpmInstall } = await inquirer.prompt([
+		const answer = await inquirer.prompt([
 			{
 				type: 'confirm',
 				name: 'runNpmInstall',
-				message: 'Do you want to run "npm install" before starting the emulators?',
+				message: 'Do you want to run npm install now?',
 				default: true
 			}
 		]);
-		return runNpmInstall;
+
+		return answer.runNpmInstall;
 	}
 
 	/**
@@ -441,10 +511,15 @@ class InitProject
 
 			npmInstall.on('close', (code) => {
 				if (code === 0) {
-					console.log('npm install completed successfully.');
+					console.log('\n');
+					console.log('🌱 - \x1b[1mMimoto\x1b[0m 💬 - npm install completed successfully.');
+					console.log('\n');
 					resolve();
 				} else {
 					console.error(`npm install process exited with code ${code}`);
+					console.log('\n');
+					console.log('🌱 - \x1b[1mMimoto\x1b[0m ⚠️ - npm install completed successfully.');
+					console.log('\n');
 					reject(new Error(`npm install failed with code ${code}`));
 				}
 			});

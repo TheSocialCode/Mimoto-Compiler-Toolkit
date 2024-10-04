@@ -97,10 +97,6 @@ class Startup
                     sTargetDir = process.cwd();
                 }
 
-
-                console.log('sTargetDir = ', sTargetDir);
-
-
                 initProject.init(sTargetDir);
 
                 break;
