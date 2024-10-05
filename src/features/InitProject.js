@@ -9,6 +9,7 @@ const path = require('path');
 const { exec, spawn } = require('child_process');
 const readline = require('readline');
 const firebase = require('firebase-tools');
+const ora = require('ora');
 
 
 
@@ -17,7 +18,27 @@ class InitProject
 	constructor() {
         this.installChoice = null;
 		this._inquirer = null;
-    }
+		// Set up SIGINT handler
+		this.setupSigintHandler();
+	}
+
+	setupSigintHandler() {
+		if (process.platform === "win32") {
+			const rl = readline.createInterface({
+				input: process.stdin,
+				output: process.stdout
+			});
+
+			rl.on("SIGINT", () => {
+				process.emit("SIGINT");
+			});
+		}
+
+		process.on("SIGINT", () => {
+			console.log("\nInstallation cancelled by user.");
+			process.exit(0);
+		});
+	}
 
 
 	async getInquirer() {
@@ -34,6 +55,9 @@ class InitProject
      * @returns {Promise<string>} The user's choice: 'clean', 'selective', or 'skip'
      */
     async checkExistingFiles(targetDir) {
+
+		console.error('🚨 - Is this code still in use?');
+
 		const inquirer = await this.getInquirer();
         const files = await fs.readdir(targetDir);
         const existingFiles = files.filter(file => !file.startsWith('.'));
@@ -43,8 +67,11 @@ class InitProject
         }
 
 		console.log('\n');
+		console.log('┌───\n│\n');
 		console.log('🌱 - \x1b[1mMimoto\x1b[0m 💬 - The following files/folders already exist in the target directory:');
-        existingFiles.forEach(file => console.log(`- ${file}`));
+        existingFiles.forEach(file => console.log(`│    - ${file}`));
+		console.log('│\n');
+		console.log('└───');
 		console.log('\n');
 
         const { choice } = await inquirer.prompt([
@@ -314,7 +341,12 @@ class InitProject
 	 * @returns {Promise<void>}
 	 */
 	async initializeFirebaseEmulators(targetDir) {
-		console.log('Initializing Firebase Emulators...');
+		console.log('┌───');
+		console.log('│');
+		console.log('│   Initializing Firebase Emulators...');
+		console.log('│');
+		console.log('└───');
+		console.log('\n');
 		
 		const originalDir = process.cwd();
 		
@@ -322,19 +354,25 @@ class InitProject
 			// Change to the target directory
 			process.chdir(targetDir);
 			
-			console.log(`Current working directory: ${process.cwd()}`);
-			
 			await firebase.init({
 				feature: 'emulators',
 				interactive: true
 			});
-			console.log('Firebase Emulators initialized successfully.');
+
+			console.log('┌───');
+			console.log('│');
+			console.log('│   Firebase Emulators initialized successfully.');
+			console.log('│');
 		} catch (error) {
-			console.error('Error initializing Firebase Emulators:', error.message);
+			console.log('┌───');
+			console.log('│');
+			console.log(`│   Error initializing Firebase Emulators: ${error.message}`);
+			console.log('│');
 			throw new Error('Firebase Emulators initialization failed');
 		} finally {
 			// Change back to the original directory
 			process.chdir(originalDir);
+			console.log('└───');
 		}
 	}
 
@@ -344,6 +382,7 @@ class InitProject
 	 * @returns {Promise<string>} The user's choice: 'clean', 'selective', or 'skip'
 	 */
 	async checkExistingFiles(targetDir) {
+
 		const inquirer = await this.getInquirer();
 		const files = await fs.readdir(targetDir);
 		const existingFiles = files.filter(file => !file.startsWith('.'));
@@ -354,9 +393,35 @@ class InitProject
 
 		console.log('🌱 - \x1b[1mMimoto\x1b[0m 💬 - The following files/folders already exist in the target directory:');
 		console.log('\n');
-		existingFiles.forEach(file => console.log(`\t- ${file}`));
-		console.log('\n');
+		console.log('┌───\n│');
 
+		// Separate folders and files
+		const folders = [];
+		const filesList = [];
+
+		existingFiles.forEach(file => {
+			const fullPath = path.join(targetDir, file);
+			if (fs.statSync(fullPath).isDirectory()) {
+				folders.push(file);
+			} else {
+				filesList.push(file);
+			}
+		});
+
+		// Sort and print folders first
+		folders.sort().forEach(folder => {
+			console.log(`│    📂 ${folder}`);
+		});
+
+		// Then sort and print files
+		filesList.sort().forEach(file => {
+			console.log(`│    - ${file}`);
+		});
+
+		console.log('│');
+		console.log('└───');
+		console.log('\n');
+		
 		const { choice } = await inquirer.prompt([
 			{
 				type: 'list',
@@ -380,6 +445,9 @@ class InitProject
 	 * @param {string} destPath - Destination path for the file/folder
 	 */
 	async handleFileOperation(sourcePath, destPath) {
+
+		const inquirer = await this.getInquirer();
+
 		switch (this.installChoice) {
 			case 'clean':
 				const cacheDir = path.dirname(destPath);
@@ -507,24 +575,54 @@ class InitProject
 		return new Promise((resolve, reject) => {
 			console.log('Running npm install...');
 			
-			const npmInstall = spawn('npm', ['install'], { cwd: targetDir, stdio: 'inherit', shell: true });
+			console.log('\n');
+
+			const spinner = ora('Installing packages...').start();
+
+			const npmInstall = spawn('npm', ['install', '--loglevel=error'], { 
+				cwd: targetDir, 
+				shell: true,
+				stdio: ['inherit', 'pipe', 'pipe'] // Pipe stdout and stderr
+			});
+
+			let output = '┌───\n│\n';
+
+			const processLine = (line) => {
+				if (line.trim() && !line.toLowerCase().includes('warn')) {
+					const indentedLine = line.replace(/^(\s*)(.*)/, (_, indent, content) => {
+						return '│   ' + indent + content;
+					});
+					output += indentedLine + '\n│\n';
+					spinner.text = 'Installing packages: ' + line.trim();
+				}
+			};
+
+			npmInstall.stdout.on('data', (data) => {
+				data.toString().split('\n').forEach(processLine);
+			});
+
+			npmInstall.stderr.on('data', (data) => {
+				data.toString().split('\n').forEach(processLine);
+			});
 
 			npmInstall.on('close', (code) => {
+				spinner.stop();
+				output += '└───\n';
+
+				console.log(output);
+
 				if (code === 0) {
-					console.log('\n');
-					console.log('🌱 - \x1b[1mMimoto\x1b[0m 💬 - npm install completed successfully.');
-					console.log('\n');
+					console.log('\n🌱 - \x1b[1mMimoto\x1b[0m 💬 - npm install completed successfully.\n');
 					resolve();
 				} else {
-					console.error(`npm install process exited with code ${code}`);
-					console.log('\n');
-					console.log('🌱 - \x1b[1mMimoto\x1b[0m ⚠️ - npm install completed successfully.');
-					console.log('\n');
+					console.log('\n🌱 - \x1b[1mMimoto\x1b[0m ⚠️ - npm install failed.');
+					console.error(`npm install process exited with code ${code}\n`);
 					reject(new Error(`npm install failed with code ${code}`));
 				}
 			});
 
 			npmInstall.on('error', (error) => {
+				spinner.stop();
 				console.error(`Error during npm install: ${error.message}`);
 				reject(error);
 			});
