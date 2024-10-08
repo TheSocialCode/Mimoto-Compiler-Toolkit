@@ -13,8 +13,8 @@ module.exports = {
     // --- Javascript ---
 
     entry: {
-        '{{PROJECT_NAME}}': [
-            './src/js/{{PROJECT_NAME}}.src.js'
+        '{{PROJECT_ID}}': [
+            './src/js/{{PROJECT_ID}}.src.js'
         ]
     },
     output: {
@@ -65,7 +65,7 @@ module.exports = {
 
     plugins: [
         new CleanWebpackPlugin(),
-        new webpack.BannerPlugin('{{PROJECT_NAME}} by {{PROJECT_AUTHOR}}\n\nPlease support me by donating: https://paypal.me/thesocialcode\n'),
+        new webpack.BannerPlugin('{{PROJECT_NAME}} by {{PROJECT_AUTHOR}} ({{PROJECT_EMAIL}}) built with Mimoto\n\nPlease support Mimoto by donating: https://paypal.me/thesocialcode\n'),
         // new WebpackManifestPlugin( { publicPath: "" } ),
         new MiniCssExtractPlugin({
             // filename: '[name].[chunkhash].css'

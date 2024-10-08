@@ -15,14 +15,243 @@ const ora = require('ora');
 
 class InitProject
 {
+
+
+
+	// ----------------------------------------------------------------------------
+	// --- Constructor ------------------------------------------------------------
+	// ----------------------------------------------------------------------------
+
+
 	constructor() {
         this.installChoice = null;
 		this._inquirer = null;
+		this.project = {
+			id: '',
+			name: '',
+			author: '',
+			email: ''
+		};
 		// Set up SIGINT handler
-		this.setupSigintHandler();
+		this._setupSigintHandler();
 	}
 
-	setupSigintHandler() {
+
+
+
+	// ----------------------------------------------------------------------------
+	// --- Public methods ---------------------------------------------------------
+	// ----------------------------------------------------------------------------
+
+
+/**
+     * Initializes the project
+     * @param {string} targetDir - The target directory for installation
+     */
+	async init(targetDir)
+	{
+
+		const inquirer = await this._getInquirer();
+		const configPath = path.join(targetDir, 'mimoto.config.json');
+
+		let config = {};
+		let bHasExistingConfig = false;
+		if (await fs.pathExists(configPath)) {
+			try {
+				config = JSON.parse(await fs.readFile(configPath, 'utf8'));
+				bHasExistingConfig = true;
+			} catch (error) {
+				console.error('Error reading mimoto.config.json:', error);
+			}
+		}
+
+		// Ask for project name, author name, and author email if not in config
+		if (!config.name || !config.author || !config.email) {
+			const getDefaults = (() => {
+				const currentDir = process.cwd();
+				const targetBaseName = path.basename(targetDir);
+				
+				// Check if we're in the root of the Mimoto npm package
+				const isMimotoPackageRoot = (() => {
+					try {
+						const packageJsonPath = path.join(currentDir, 'package.json');
+						if (fs.existsSync(packageJsonPath)) {
+							const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+							return packageJson.name === 'mimoto';
+						}
+					} catch (error) {
+						console.error('Error reading package.json:', error);
+					}
+					return false;
+				})();
+
+				// Check if we're in the development environment
+				if (isMimotoPackageRoot && targetBaseName === 'cache') {
+					return {
+						name: "Mimoto Project Boilerplate",
+						author: "Sebastian Kersten",
+						email: "sebastian@thesocialcode.com"
+					};
+				}
+				
+				return {
+					name: config.name || targetBaseName,
+					author: config.author || '',
+					email: config.email || ''
+				};
+			})();
+
+			// Use these defaults in the prompts
+			const answers = await inquirer.prompt([
+				{
+					type: 'input',
+					name: 'name',
+					message: 'Enter the project name:',
+					default: getDefaults.name
+				},
+				{
+					type: 'input',
+					name: 'author',
+					message: 'Enter the author name:',
+					default: getDefaults.author
+				},
+				{
+					type: 'input',
+					name: 'email',
+					message: 'Enter the author email:',
+					default: getDefaults.email,
+					validate: function(email) {
+						// Simple email validation
+						const valid = /^\S+@\S+\.\S+$/.test(email);
+						return valid || 'Please enter a valid email address';
+					}
+				}
+			]);
+
+			config.name = answers.name;
+			config.author = answers.author;
+			config.email = answers.email;
+		}
+
+		this.project.name = config.name;
+		this.project.author = config.author;
+		this.project.email = config.email;
+
+		this.project.id = config.name
+			.toLowerCase()
+			.replace(/\s+/g, '-')        // Replace spaces with hyphens
+			.replace(/[^a-z0-9-_]/g, '') // Remove any characters that are not lowercase alphanumeric, hyphens, or underscores
+			.replace(/^[^a-z]/, 'p')     // Ensure it starts with a letter (prepend 'p' if it doesn't)
+			.substring(0, 214);          // Truncate to 214 characters (npm has a 214 character limit for package names)
+
+
+		// console.log(`\n🌱 - \x1b[1mMimoto\x1b[0m 💬 - Initializing project: \x1b[1m\x1b[92m${this.project.name}\x1b[0m by ${this.project.author} (${this.project.email})\n`);
+
+
+		console.log(`┌───`);
+		console.log(`│`);
+		console.log(`│  🌱 - \x1b[1mMimoto\x1b[0m 💬 - Initializing project:`);
+		console.log(`│`);
+		console.log(`│       \x1b[1m\x1b[92m${this.project.name}\x1b[0m`);
+		console.log(`│   	 \x1B[3mby ${this.project.author} (${this.project.email})\x1B[0m`);
+
+		if (bHasExistingConfig) {
+			console.log(`│`);
+			console.log('│       \x1B[3m(From existing mimoto.config.json)\x1B[0m');
+		}
+
+		console.log(`│`);
+		console.log(`└───`);
+
+		this.installChoice = await this.checkExistingFiles(targetDir);
+
+		if (this.installChoice === 'cancel') {
+			console.log('Installation cancelled.');
+			process.exit(0); // Exit the process with a success code
+		}
+
+		// Define the source directory for your boilerplates
+		const sourceDir = path.join(__dirname, '..', '..', 'boilerplates', 'project');
+
+		// Check if the source directory exists
+		if (!await fs.pathExists(sourceDir)) {
+			console.error(`Error: Boilerplate directory not found at ${sourceDir}`);
+			console.log('Please ensure that the boilerplate directory exists and try again.');
+			process.exit(1);
+		}
+
+		try {
+
+			if (this.installChoice === 'skip') {
+				console.log('\n');
+				console.log(`┌───`);
+				console.log(`│`);
+				console.log(`│   🌱 - \x1b[1mMimoto\x1b[0m 💬 - File syncing skipped.`);
+				console.log(`│`);
+				console.log(`└───`);
+			} else {
+				const files = await fs.readdir(sourceDir);
+
+				for (const file of files) {
+					const sourcePath = path.join(sourceDir, file);
+					const destPath = path.join(targetDir, file);
+					
+					// // Skip mimoto.config.json and package.json if they already exist
+					// if ((file === 'mimoto.config.json' || file === 'package.json') && await fs.pathExists(destPath)) {
+					// 	console.log(`🌱 - \x1b[1mMimoto\x1b[0m 💬 - Skipping existing ${file}`);
+					// 	continue;
+					// }
+					
+					await this._handleFileOperation(sourcePath, destPath, targetDir);
+				}
+
+				console.log(`┌───`);
+				console.log(`│`);
+				console.log(`│  🌱 - \x1b[1mMimoto\x1b[0m 💬 - File syncing completed successfully.`);
+				console.log(`│`);
+				console.log(`└───`);
+			}
+
+		// You might want to use projectName and authorName in your file operations
+			// For example, updating package.json with these details
+			await this._updatePackageJson(targetDir);
+
+			try {
+
+				// Ask if npm install should be run
+				const shouldInstall = await this.shouldRunNpmInstall();
+
+				if (shouldInstall) {
+					await this._runNpmInstall(targetDir);
+				}
+			} catch (error) {
+				if (error.name === 'ExitPromptError') {
+				  console.log('\nNpm install cancelled. You can run it manually later if needed.');
+				  process.exit(0);
+				} else {
+				  console.error('An unexpected error occurred:', error);
+				}
+			}
+			
+			// Example: Initialize Firebase Emulators
+			await this.initializeFirebaseEmulators(targetDir);
+
+			
+
+		} catch (error) {
+			console.error('Error during file operations:', error);
+			process.exit(1);
+		}
+	}
+
+
+
+	// ----------------------------------------------------------------------------
+	// --- Private methods --------------------------------------------------------
+	// ----------------------------------------------------------------------------
+
+
+	_setupSigintHandler() {
 		if (process.platform === "win32") {
 			const rl = readline.createInterface({
 				input: process.stdin,
@@ -41,7 +270,7 @@ class InitProject
 	}
 
 
-	async getInquirer() {
+	async _getInquirer() {
 		if (!this._inquirer) {
 		  const inquirerModule = await import('inquirer');
 		  this._inquirer = inquirerModule.default;
@@ -50,54 +279,12 @@ class InitProject
 	  }
 
     /**
-     * Checks for existing files and prompts the user for installation preferences
-     * @param {string} targetDir - The target directory for installation
-     * @returns {Promise<string>} The user's choice: 'clean', 'selective', or 'skip'
-     */
-    async checkExistingFiles(targetDir) {
-
-		console.error('🚨 - Is this code still in use?');
-
-		const inquirer = await this.getInquirer();
-        const files = await fs.readdir(targetDir);
-        const existingFiles = files.filter(file => !file.startsWith('.'));
-
-        if (existingFiles.length === 0) {
-            return 'clean'; // No existing files, proceed with clean install
-        }
-
-		console.log('\n');
-		console.log('┌───\n│\n');
-		console.log('🌱 - \x1b[1mMimoto\x1b[0m 💬 - The following files/folders already exist in the target directory:');
-        existingFiles.forEach(file => console.log(`│    - ${file}`));
-		console.log('│\n');
-		console.log('└───');
-		console.log('\n');
-
-        const { choice } = await inquirer.prompt([
-            {
-                type: 'list',
-                name: 'choice',
-                message: 'How would you like to proceed?',
-                choices: [
-                    { name: 'Perform a clean install (overwrite everything)', value: 'clean' },
-                    { name: 'Decide per folder/file', value: 'selective' },
-                    { name: 'Skip file syncing altogether', value: 'skip' },
-                    { name: 'Cancel installation', value: 'cancel' }
-                ]
-            }
-        ]);
-
-        return choice;
-    }
-
-    /**
      * Handles file operations based on user's choice
      * @param {string} sourcePath - Source path of the file/folder
      * @param {string} destPath - Destination path for the file/folder
      */
-    async handleFileOperation(sourcePath, destPath) {
-		const inquirer = await this.getInquirer();
+    async _handleFileOperation(sourcePath, destPath, targetDir) {
+		const inquirer = await this._getInquirer();
         switch (this.installChoice) {
             case 'clean':
                 const cacheDir = path.dirname(destPath);
@@ -118,16 +305,89 @@ class InitProject
                 break;
             case 'selective':
                 if (await fs.pathExists(destPath)) {
-                    const { overwrite } = await inquirer.prompt([
-                        {
-                            type: 'confirm',
-                            name: 'overwrite',
-                            message: `Overwrite ${destPath}?`,
-                            default: false
+                    const sourceStats = await fs.stat(sourcePath);
+
+                    const getRelativePath = (fullPath) => {
+                        const projectRoot = process.cwd();
+                        const relativePath = path.relative(projectRoot, fullPath);
+                        const targetDirName = path.basename(targetDir);
+                        return relativePath.replace(new RegExp(`^${targetDirName}[\\/]`), '');
+                    };
+
+                    const relativeDestPath = getRelativePath(destPath);
+
+                    if (sourceStats.isDirectory()) {
+                        // Ask about overwriting the root folder first
+                        const { overwriteRoot } = await inquirer.prompt([
+                            {
+                                type: 'confirm',
+                                name: 'overwriteRoot',
+                                message: `Overwrite folder 📂 ${relativeDestPath}?`,
+                                default: false
+                            }
+                        ]);
+
+                        if (overwriteRoot) {
+                            const sourceContents = await fs.readdir(sourcePath);
+                            const folders = sourceContents.filter(item => fs.statSync(path.join(sourcePath, item)).isDirectory());
+                            const files = sourceContents.filter(item => fs.statSync(path.join(sourcePath, item)).isFile());
+
+                            // Handle folders
+                            for (const folder of folders) {
+                                const sourceFolderPath = path.join(sourcePath, folder);
+                                const destFolderPath = path.join(destPath, folder);
+                                const relativeFolderPath = getRelativePath(destFolderPath);
+                                if (await fs.pathExists(destFolderPath)) {
+                                    const { overwriteFolder } = await inquirer.prompt([
+                                        {
+                                            type: 'confirm',
+                                            name: 'overwriteFolder',
+                                            message: `Overwrite folder 📂 ${relativeFolderPath}?`,
+                                            default: false
+                                        }
+                                    ]);
+                                    if (overwriteFolder) {
+                                        await fs.copy(sourceFolderPath, destFolderPath, { overwrite: true });
+                                    }
+                                } else {
+                                    await fs.copy(sourceFolderPath, destFolderPath);
+                                }
+                            }
+
+                            // Handle files
+                            for (const file of files) {
+                                const sourceFilePath = path.join(sourcePath, file);
+                                const destFilePath = path.join(destPath, file);
+                                const relativeFilePath = getRelativePath(destFilePath);
+                                if (await fs.pathExists(destFilePath)) {
+                                    const { overwriteFile } = await inquirer.prompt([
+                                        {
+                                            type: 'confirm',
+                                            name: 'overwriteFile',
+                                            message: `Overwrite file ${relativeFilePath}?`,
+                                            default: false
+                                        }
+                                    ]);
+                                    if (overwriteFile) {
+                                        await fs.copy(sourceFilePath, destFilePath, { overwrite: true });
+                                    }
+                                } else {
+                                    await fs.copy(sourceFilePath, destFilePath);
+                                }
+                            }
                         }
-                    ]);
-                    if (overwrite) {
-                        await fs.copy(sourcePath, destPath, { overwrite: true });
+                    } else {
+                        const { overwrite } = await inquirer.prompt([
+                            {
+                                type: 'confirm',
+                                name: 'overwrite',
+                                message: `Overwrite ${relativeDestPath}?`,
+                                default: false
+                            }
+                        ]);
+                        if (overwrite) {
+                            await fs.copy(sourcePath, destPath, { overwrite: true });
+                        }
                     }
                 } else {
                     await fs.copy(sourcePath, destPath);
@@ -139,102 +399,7 @@ class InitProject
         }
     }
 
-    /**
-     * Initializes the project
-     * @param {string} targetDir - The target directory for installation
-     */
-    async init(targetDir) {
-		const inquirer = await this.getInquirer();
-
-        this.installChoice = await this.checkExistingFiles(targetDir);
-
-        if (this.installChoice === 'cancel') {
-            console.log('Installation cancelled.');
-            process.exit(0); // Exit the process with a success code
-        }
-
-        // Ask for project details
-        const { projectName, projectAuthor } = await inquirer.prompt([
-            {
-                type: 'input',
-                name: 'projectName',
-                message: 'Enter your project name:',
-                validate: input => input.trim() !== '' || 'Project name cannot be empty'
-            },
-            {
-                type: 'input',
-                name: 'projectAuthor',
-                message: 'Enter the project author:',
-                validate: input => input.trim() !== '' || 'Project author cannot be empty'
-            }
-        ]);
-
-        // Sanitize and PascalCase the project name for filenames
-        const sanitizedProjectName = projectName
-            .replace(/[^a-zA-Z0-9]/g, '') // Remove invalid characters
-            .replace(/^\d+/, ''); // Remove leading digits
-        const pascalCaseProjectName = sanitizedProjectName.charAt(0).toUpperCase() + sanitizedProjectName.slice(1);
-
-        // Function to replace variables in a file
-        const replaceVariablesInFile = async (filePath) => {
-            let content = await fs.readFile(filePath, 'utf8');
-            content = content.replace(/{{PROJECT_NAME}}/g, pascalCaseProjectName);
-            content = content.replace(/{{PROJECT_AUTHOR}}/g, projectAuthor);
-            await fs.writeFile(filePath, content, 'utf8');
-        };
-
-        // Add this function to the file operations
-        this.handleFileOperation = async (sourcePath, destPath) => {
-            await this.handleFileOperation.call(this, sourcePath, destPath);
-            if (path.basename(destPath) === 'webpack.config.js') {
-                await replaceVariablesInFile(destPath);
-            }
-        };
-        console.log(`Proceeding with ${this.installChoice} install...`);
-
-        // Define the source directory for your boilerplates
-        const sourceDir = path.join(__dirname, '..', '..', 'boilerplates', 'project');
-
-        // Check if the source directory exists
-        if (!await fs.pathExists(sourceDir)) {
-            console.error(`Error: Boilerplate directory not found at ${sourceDir}`);
-            console.log('Please ensure that the boilerplate directory exists and try again.');
-            process.exit(1);
-        }
-
-        try {
-
-            if (this.installChoice === 'skip') {
-                console.log('\n');
-                console.log('🌱 - \x1b[1mMimoto\x1b[0m 💬 - File syncing skipped.');
-            } else {
-                const files = await fs.readdir(sourceDir);
-
-                for (const file of files) {
-                    const sourcePath = path.join(sourceDir, file);
-                    const destPath = path.join(targetDir, file);
-                    await this.handleFileOperation(sourcePath, destPath);
-                }
-
-                console.log('\n');
-                console.log('🌱 - \x1b[1mMimoto\x1b[0m 💬 - File syncing completed successfully.');
-            }
-
-            // Ask if npm install should be run
-            const shouldInstall = await this.shouldRunNpmInstall();
-
-            if (shouldInstall) {
-                await this.runNpmInstall(targetDir);
-            }
-
-            // Example: Initialize Firebase Emulators
-            await this.initializeFirebaseEmulators(targetDir);
-
-        } catch (error) {
-            console.error('Error during file operations:', error);
-            process.exit(1);
-        }
-    }
+    
 
 	/**
 	 * Copy template files and folders with user confirmation for existing ones.
@@ -243,7 +408,7 @@ class InitProject
 	 */
 	async copyTemplateWithConfirmation(sSourcePath, sDestinationPath)
 	{
-		const inquirer = await this.getInquirer();
+		const inquirer = await this._getInquirer();
 		try {
 			const aItems = fs.readdirSync(sSourcePath);
 
@@ -383,7 +548,7 @@ class InitProject
 	 */
 	async checkExistingFiles(targetDir) {
 
-		const inquirer = await this.getInquirer();
+		const inquirer = await this._getInquirer();
 		const files = await fs.readdir(targetDir);
 		const existingFiles = files.filter(file => !file.startsWith('.'));
 
@@ -391,9 +556,10 @@ class InitProject
 			return 'clean'; // No existing files, proceed with clean install
 		}
 
-		console.log('🌱 - \x1b[1mMimoto\x1b[0m 💬 - The following files/folders already exist in the target directory:');
-		console.log('\n');
-		console.log('┌───\n│');
+		console.log('┌───');
+		console.log('│');
+		console.log('│  🌱 - \x1b[1mMimoto\x1b[0m 💬 - The following files/folders already exist in the target directory:');
+		console.log('│');
 
 		// Separate folders and files
 		const folders = [];
@@ -410,12 +576,12 @@ class InitProject
 
 		// Sort and print folders first
 		folders.sort().forEach(folder => {
-			console.log(`│    📂 ${folder}`);
+			console.log(`│       📂 ${folder}`);
 		});
 
 		// Then sort and print files
 		filesList.sort().forEach(file => {
-			console.log(`│    - ${file}`);
+			console.log(`│       - ${file}`);
 		});
 
 		console.log('│');
@@ -440,118 +606,11 @@ class InitProject
 	}
 
 	/**
-	 * Handles file operations based on user's choice
-	 * @param {string} sourcePath - Source path of the file/folder
-	 * @param {string} destPath - Destination path for the file/folder
-	 */
-	async handleFileOperation(sourcePath, destPath) {
-
-		const inquirer = await this.getInquirer();
-
-		switch (this.installChoice) {
-			case 'clean':
-				const cacheDir = path.dirname(destPath);
-                const sourceDir = path.dirname(sourcePath);
-
-                // Remove the entire cache folder
-                await fs.remove(cacheDir);
-                
-                // Recreate the cache folder
-                await fs.ensureDir(cacheDir);
-                
-                // Copy all files from the source directory to the cache directory
-                await fs.copy(sourceDir, cacheDir, { overwrite: true });
-
-                // Log the list of copied files for debugging
-                const copiedFiles = await fs.readdir(cacheDir);
-
-                break;
-			case 'selective':
-				if (await fs.pathExists(destPath)) {
-					const { overwrite } = await inquirer.prompt([
-						{
-							type: 'confirm',
-							name: 'overwrite',
-							message: `Overwrite ${destPath}?`,
-							default: false
-						}
-					]);
-					if (overwrite) {
-						await fs.copy(sourcePath, destPath, { overwrite: true });
-					}
-				} else {
-					await fs.copy(sourcePath, destPath);
-				}
-				break;
-			case 'skip':
-				// Do nothing
-				break;
-		}
-	}
-
-	/**
-	 * Initializes the project
-	 * @param {string} targetDir - The target directory for installation
-	 */
-	async init(targetDir) {
-		this.installChoice = await this.checkExistingFiles(targetDir);
-
-		if (this.installChoice === 'cancel') {
-			console.log('Installation cancelled.');
-			process.exit(0); // Exit the process with a success code
-		}
-
-		console.log(`Proceeding with ${this.installChoice} install...`);
-
-		// Define the source directory for your boilerplates
-		const sourceDir = path.join(__dirname, '..', '..', 'boilerplates', 'project');
-
-		// Check if the source directory exists
-		if (!await fs.pathExists(sourceDir)) {
-			console.error(`Error: Boilerplate directory not found at ${sourceDir}`);
-			console.log('Please ensure that the boilerplate directory exists and try again.');
-			process.exit(1);
-		}
-
-		try {
-			if (this.installChoice === 'skip') {
-                console.log('\n');
-                console.log('🌱 - \x1b[1mMimoto\x1b[0m 💬 - File syncing skipped.');
-            } else {
-                const files = await fs.readdir(sourceDir);
-
-                for (const file of files) {
-                    const sourcePath = path.join(sourceDir, file);
-                    const destPath = path.join(targetDir, file);
-                    await this.handleFileOperation(sourcePath, destPath);
-                }
-
-                console.log('\n');
-                console.log('🌱 - \x1b[1mMimoto\x1b[0m 💬 - File syncing completed successfully.');
-            }
-
-			// Ask if npm install should be run
-			const shouldInstall = await this.shouldRunNpmInstall();
-
-			if (shouldInstall) {
-				await this.runNpmInstall(targetDir);
-			}
-
-			// Example: Initialize Firebase Emulators
-			await this.initializeFirebaseEmulators(targetDir);
-
-		} catch (error) {
-			console.error('Error during file operations:', error);
-			process.exit(1);
-		}
-	}
-
-	/**
 	 * Prompts the user to run npm install
 	 * @returns {Promise<boolean>}
 	 */
 	async shouldRunNpmInstall() {
-		const inquirer = await this.getInquirer();
+		const inquirer = await this._getInquirer();
 
 		console.log('\n');
 		const answer = await inquirer.prompt([
@@ -571,11 +630,15 @@ class InitProject
 	 * @param {string} targetDir - The target directory for installation
 	 * @returns {Promise<void>}
 	 */
-	async runNpmInstall(targetDir) {
+	async _runNpmInstall(targetDir) {
 		return new Promise((resolve, reject) => {
-			console.log('Running npm install...');
-			
-			console.log('\n');
+
+			console.log(`┌───`);
+            console.log(`│`);
+            console.log(`│    🌱 - \x1b[1mMimoto\x1b[0m 💬 - Running npm install...`);
+            console.log(`│`);
+            console.log(`└───`);
+            console.log('\n');
 
 			const spinner = ora('Installing packages...').start();
 
@@ -627,6 +690,69 @@ class InitProject
 				reject(error);
 			});
 		});
+	}
+
+    async _updatePackageJson(targetDir)
+	{
+
+		const mimotoJsonPath = path.join(targetDir, 'mimoto.config.json');
+        const packageJsonPath = path.join(targetDir, 'package.json');
+        const webpackConfigPath = path.join(targetDir, 'webpack.config.js');
+        
+        let updatedFiles = [];
+
+        if (await fs.pathExists(mimotoJsonPath)) {
+            const mimotoJson = JSON.parse(await fs.readFile(mimotoJsonPath, 'utf8'));
+            
+            const updatedMimotoJson = {
+                name: this.project.name,
+                author: this.project.author,
+                email: this.project.email,
+                ...mimotoJson
+            };
+
+            await fs.writeFile(mimotoJsonPath, JSON.stringify(updatedMimotoJson, null, 2));
+            updatedFiles.push('mimoto.config.json');
+        }
+
+        if (await fs.pathExists(packageJsonPath)) {
+            const packageJson = JSON.parse(await fs.readFile(packageJsonPath, 'utf8'));
+            
+            const updatedPackageJson = {
+                name: this.project.id,
+                displayName: this.project.name,
+                author: `${this.project.author} <${this.project.email}>`,
+                ...packageJson
+            };
+
+            await fs.writeFile(packageJsonPath, JSON.stringify(updatedPackageJson, null, 2));
+            updatedFiles.push('package.json');
+        }
+        
+        if (await fs.pathExists(webpackConfigPath)) {
+            let webpackConfig = await fs.readFile(webpackConfigPath, 'utf8');
+
+            webpackConfig = webpackConfig.replace(/{{PROJECT_NAME}}/g, this.project.name);
+            webpackConfig = webpackConfig.replace(/{{PROJECT_ID}}/g, this.project.name.split(/[\s-_]+/).map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(''));
+            webpackConfig = webpackConfig.replace(/{{PROJECT_AUTHOR}}/g, this.project.author);
+            webpackConfig = webpackConfig.replace(/{{PROJECT_EMAIL}}/g, this.project.email);
+
+            await fs.writeFile(webpackConfigPath, webpackConfig);
+            updatedFiles.push('webpack.config.js');
+        }
+
+        if (updatedFiles.length > 0) {
+            console.log(`┌───`);
+            console.log(`│`);
+            console.log(`│  🌱 - \x1b[1mMimoto\x1b[0m 💬 - Updated project details in:`);
+			console.log(`│`);
+            updatedFiles.forEach(file => {
+                console.log(`│     - ${file}`);
+            });
+            console.log(`│`);
+            console.log(`└───`);
+            console.log('\n');
+        }
 	}
 
 }
