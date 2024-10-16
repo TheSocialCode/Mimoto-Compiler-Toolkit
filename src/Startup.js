@@ -13,6 +13,7 @@ const InitProject = require('./../src/features/InitProject');
 const DistributeMimoto = require('./../src/features/DistributeMimoto');
 const CombineTemplates = require('./../src/features/CombineTemplates');
 const CloneFile = require('./../src/features/CloneFile');
+const InstallComponents = require('./features/InstallComponents');
 
 // 3. import 3rd party classes
 const inquirer = require('inquirer');
@@ -47,7 +48,7 @@ class Startup
                     type: 'list',
                     name: 'framework',
                     message: 'What would you like me to do?',
-                    choices: ['run', 'clone', 'init'],
+                    choices: ['run', 'clone', 'init', 'components'],
                 }
             ];
 
@@ -72,31 +73,30 @@ class Startup
         }
 
 
+        // Determine the target directory for initialization
+        let sTargetDir;
+        const cliPath = path.resolve(process.argv[1]);
+        const cliDir = path.dirname(cliPath);
+
+        if (cliDir === process.cwd()) {
+            // We're running from the directory containing cli.js
+            sTargetDir = path.join(cliDir, 'cache');
+            // Ensure the cache directory exists
+            if (!fs.existsSync(sTargetDir)) {
+                fs.mkdirSync(sTargetDir);
+            }
+        } else {
+            // We're running from elsewhere, use the current directory
+            sTargetDir = process.cwd();
+        }
+
+
         // Check which command was passed and call the appropriate function
         switch (sCommand.toLowerCase()) {
             case 'init':
 
 
                 let initProject = new InitProject();
-
-
-                // Determine the target directory for initialization
-                let sTargetDir;
-                const cliPath = path.resolve(process.argv[1]);
-                const cliDir = path.dirname(cliPath);
-
-                if (cliDir === process.cwd()) {
-                    // We're running from the directory containing cli.js
-                    sTargetDir = path.join(cliDir, 'cache');
-                    // Ensure the cache directory exists
-                    if (!fs.existsSync(sTargetDir)) {
-                        fs.mkdirSync(sTargetDir);
-                    }
-                } else {
-                    // We're running from elsewhere, use the current directory
-                    sTargetDir = process.cwd();
-                }
-
                 initProject.init(sTargetDir);
 
                 break;
@@ -107,6 +107,16 @@ class Startup
                 new CloneFile(aArgs[0], aArgs[1]);
 
                 break;
+
+
+            case 'components':
+
+                // check if args 0 en 1 gezet en exist?
+                const componentInstaller = new InstallComponents(sTargetDir);
+                componentInstaller.install();
+
+                break;
+
             case 'compile':
 
 
@@ -174,3 +184,4 @@ class Startup
 }
 
 module.exports = Startup;
+

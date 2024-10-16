@@ -10,6 +10,8 @@ const { exec, spawn } = require('child_process');
 const readline = require('readline');
 const firebase = require('firebase-tools');
 const ora = require('ora');
+const Utils = require('./Utils');
+const InstallComponents = require('./InstallComponents');
 
 
 
@@ -51,7 +53,7 @@ class InitProject
 	async init(targetDir)
 	{
 
-		const inquirer = await this._getInquirer();
+		const inquirer = await Utils.getInquirer();
 		const configPath = path.join(targetDir, 'mimoto.config.json');
 
 		let config = {};
@@ -233,10 +235,64 @@ class InitProject
 				}
 			}
 			
-			// Example: Initialize Firebase Emulators
-			await this.initializeFirebaseEmulators(targetDir);
+			// Ask user if they want to install components
+			const { installComponents } = await inquirer.prompt([
+				{
+					type: 'confirm',
+					name: 'installComponents',
+					message: 'Do you want to install any components?',
+					default: true
+				}
+			]);
+
+			if (installComponents) {
+				// Initialize and run InstallComponents
+				const installComponentsInstance = new InstallComponents(targetDir);
+				await installComponentsInstance.install();
+			} else {
+				console.log('Skipping component installation.');
+			}
 
 			
+			
+			// Ask user if they want to install Firebase Emulators
+			const { installEmulators } = await inquirer.prompt([
+				{
+					type: 'confirm',
+					name: 'installEmulators',
+					message: 'Do you want to install and initialize Firebase Emulators?',
+					default: true
+				}
+			]);
+
+			if (installEmulators) {
+				// Initialize Firebase Emulators
+				await this.initializeFirebaseEmulators(targetDir);
+			} else {
+				console.log('Skipping Firebase Emulators installation.');
+			}
+
+			console.log(`┌───`);
+			console.log(`│`);
+			console.log(`│  🌱 - \x1b[1mMimoto\x1b[0m 💬 - Installation completed successfully!`);
+			console.log(`│`);
+			console.log(`│  ✨`);
+			console.log(`│`);
+			console.log(`│     You can now run the Firebase Emulators:`);
+			console.log(`│        \x1b[1mfirebase emulators:start\x1b[0m`);
+			console.log(`│`);
+			console.log(`│     This will start all configured Firebase Emulators.`);
+			console.log(`│`);
+			console.log(`│     You will be able to access the Firebase Emulator Suite UI at:`);
+			console.log(`│        \x1b[1mhttp://localhost:4000\x1b[0m`);
+			console.log(`│`);
+			console.log(`│      Happy coding! 🚀`);
+			console.log(`│`);
+			console.log(`│`);
+			console.log(`│    Run: \x1b[1mnpx mimoto run\x1b[0m`);
+			console.log(`│`);
+			console.log(`└───`);
+			console.log(``);
 
 		} catch (error) {
 			console.error('Error during file operations:', error);
@@ -269,22 +325,13 @@ class InitProject
 		});
 	}
 
-
-	async _getInquirer() {
-		if (!this._inquirer) {
-		  const inquirerModule = await import('inquirer');
-		  this._inquirer = inquirerModule.default;
-		}
-		return this._inquirer;
-	  }
-
     /**
      * Handles file operations based on user's choice
      * @param {string} sourcePath - Source path of the file/folder
      * @param {string} destPath - Destination path for the file/folder
      */
     async _handleFileOperation(sourcePath, destPath, targetDir) {
-		const inquirer = await this._getInquirer();
+		const inquirer = await Utils.getInquirer();
         switch (this.installChoice) {
             case 'clean':
                 const cacheDir = path.dirname(destPath);
@@ -408,7 +455,7 @@ class InitProject
 	 */
 	async copyTemplateWithConfirmation(sSourcePath, sDestinationPath)
 	{
-		const inquirer = await this._getInquirer();
+		const inquirer = await Utils.getInquirer();
 		try {
 			const aItems = fs.readdirSync(sSourcePath);
 
@@ -548,7 +595,7 @@ class InitProject
 	 */
 	async checkExistingFiles(targetDir) {
 
-		const inquirer = await this._getInquirer();
+		const inquirer = await Utils.getInquirer();
 		const files = await fs.readdir(targetDir);
 		const existingFiles = files.filter(file => !file.startsWith('.'));
 
@@ -610,7 +657,7 @@ class InitProject
 	 * @returns {Promise<boolean>}
 	 */
 	async shouldRunNpmInstall() {
-		const inquirer = await this._getInquirer();
+		const inquirer = await Utils.getInquirer();
 
 		console.log('\n');
 		const answer = await inquirer.prompt([
