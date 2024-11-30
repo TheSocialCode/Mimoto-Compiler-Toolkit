@@ -1,0 +1,14 @@
+/**
+ * {{PROJECT_NAME}}
+ * @author - {{PROJECT_AUTHOR}} ({{PROJECT_EMAIL}})
+ */
+ 
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+p.firebase-emulator-warning {
+	display: none !important;
+}

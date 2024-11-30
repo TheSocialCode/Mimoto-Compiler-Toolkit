@@ -360,6 +360,7 @@ class InitProject
 
                 break;
             case 'selective':
+
                 if (await fs.pathExists(destPath)) {
                     const sourceStats = await fs.stat(sourcePath);
 
@@ -754,6 +755,8 @@ class InitProject
 		const mimotoJsonPath = path.join(sTargetDir, 'mimoto.config.json');
         const packageJsonPath = path.join(sTargetDir, 'package.json');
         const webpackConfigPath = path.join(sTargetDir, 'webpack.config.js');
+        const boilerplateJSPath = path.join(sTargetDir, 'src/js/MimotoProjectBoilerplate.src.js');
+        const boilerplateCSSPath = path.join(sTargetDir, 'src/css/MimotoProjectBoilerplate.src.css');
         
         let updatedFiles = [];
 
@@ -796,6 +799,49 @@ class InitProject
             await fs.writeFile(webpackConfigPath, webpackConfig);
             updatedFiles.push('webpack.config.js');
         }
+
+		if (await fs.pathExists(boilerplateJSPath)) {
+            let boilerplateJS = await fs.readFile(webpackConfigPath, 'utf8');
+
+            boilerplateJS = boilerplateJS.replace(/{{PROJECT_NAME}}/g, this.project.name);
+            boilerplateJS = boilerplateJS.replace(/{{PROJECT_ID}}/g, this.project.name.split(/[\s-_]+/).map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(''));
+            boilerplateJS = boilerplateJS.replace(/{{PROJECT_AUTHOR}}/g, this.project.author);
+            boilerplateJS = boilerplateJS.replace(/{{PROJECT_EMAIL}}/g, this.project.email);
+
+            await fs.writeFile(boilerplateJSPath, boilerplateJS);
+			
+			const sBoilerplateJSFileName = this.project.name.split(/[\s-_]+/).map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join('') + '.js';
+
+            // Define the new file path
+            const newFilePath = path.join(path.dirname(boilerplateJSPath), sBoilerplateJSFileName);
+
+            // Rename the file
+            await fs.rename(boilerplateJSPath, newFilePath);
+
+            updatedFiles.push(sBoilerplateJSFileName);
+        }
+
+		if (await fs.pathExists(boilerplateCSSPath)) {
+            let boilerplateCSS = await fs.readFile(webpackConfigPath, 'utf8');
+
+            boilerplateCSS = boilerplateCSS.replace(/{{PROJECT_NAME}}/g, this.project.name);
+            boilerplateCSS = boilerplateCSS.replace(/{{PROJECT_ID}}/g, this.project.name.split(/[\s-_]+/).map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(''));
+            boilerplateCSS = boilerplateCSS.replace(/{{PROJECT_AUTHOR}}/g, this.project.author);
+            boilerplateCSS = boilerplateCSS.replace(/{{PROJECT_EMAIL}}/g, this.project.email);
+
+            await fs.writeFile(boilerplateCSSPath, boilerplateCSS);
+			
+			const sBoilerplateCSSFileName = this.project.name.split(/[\s-_]+/).map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join('') + '.css';
+
+            // Define the new file path
+            const newFilePath = path.join(path.dirname(boilerplateCSSPath), sBoilerplateCSSFileName);
+
+            // Rename the file
+            await fs.rename(boilerplateCSSPath, newFilePath);
+
+            updatedFiles.push(sBoilerplateCSSFileName);
+        }
+
 
         if (updatedFiles.length > 0) {
             console.log(`┌───`);
