@@ -147,6 +147,8 @@ class Startup
 
 
 		let mimotoDistributor;
+		let bDefaultConfig = false;
+		const configFile = path.join(sTargetDir, 'mimoto.config.json');
 
 
 		// 4. load configuration file mimoto.config.json
@@ -161,25 +163,36 @@ class Startup
 			// b. load
 			try
 			{
-				// I. point to the directory where the script is executed, not where it is located
-				const configFile = path.join(sTargetDir, 'mimoto.config.json');
-
-				// II. load and convert
-				const config = JSON.parse(fs.readFileSync(configFile, 'utf8'));
-
-				// III. extend
-				// config.RUNTIME_ROOT = RUNTIME_ROOT;
-
-				// IV. send
-				return config;
+				// IV. load and send
+				return JSON.parse(fs.readFileSync(configFile, 'utf8'));
 
 			} catch(error) {
 
 				// I. report error
-				console.log('🚨 - WARNING - Missing config file \u001b[1m\u001B[31mmimoto.config.json\u001B[0m\u001b[22m in project root');
+				// console.log('🚨 - WARNING - Missing config file \u001b[1m\u001B[31mmimoto.config.json\u001B[0m\u001b[22m in project root');
 
-				// II. exit
-				process.exit(1);
+				// II. Attempt to copy the config file from the boilerplate
+				try {
+					const boilerplateDir = path.join(__dirname, '..', 'boilerplates', 'project');
+					const sourceConfigPath = path.join(boilerplateDir, 'mimoto.config.json');
+					const targetConfigPath = path.join(sTargetDir, 'mimoto.config.json');
+
+					if (fs.existsSync(sourceConfigPath)) {
+						fs.copyFileSync(sourceConfigPath, targetConfigPath);
+						// console.log('✅ - Copied mimoto.config.json from boilerplate to project root.');
+
+						bDefaultConfig = true;
+
+						return JSON.parse(fs.readFileSync(configFile, 'utf8'));
+
+					} else {
+						console.error('❌ - Boilerplate config file not found. Please ensure it exists at:', sourceConfigPath);
+						process.exit(1);
+					}
+				} catch (copyError) {
+					console.error('Error copying config file from boilerplate:', copyError);
+					process.exit(1);
+				}
 			}
 		})();
 
@@ -189,7 +202,7 @@ class Startup
 			case 'init':
 
 
-				let initProject = new InitProject(config);
+				let initProject = new InitProject(config, bDefaultConfig);
 				initProject.init(sTargetDir);
 
 				break;

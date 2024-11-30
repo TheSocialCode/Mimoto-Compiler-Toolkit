@@ -20,6 +20,7 @@ class InitProject
 
 	// data
 	_config = null;
+	_bDefaultConfig = false;
 
 
 	// ----------------------------------------------------------------------------
@@ -27,10 +28,11 @@ class InitProject
 	// ----------------------------------------------------------------------------
 
 
-	constructor(config) {
+	constructor(config, bDefaultConfig) {
 
 		// 1. store
 		this._config = config;
+		this._bDefaultConfig = bDefaultConfig;
 
 
         this.installChoice = null;
@@ -606,7 +608,7 @@ class InitProject
 		const files = await fs.readdir(sTargetDir);
 		const existingFiles = files.filter(file => !file.startsWith('.'));
 
-		if (existingFiles.length === 0) {
+		if (existingFiles.length === 0 || existingFiles.length === 1 && this._bDefaultConfig) {
 			return 'clean'; // No existing files, proceed with clean install
 		}
 
