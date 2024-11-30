@@ -1,4 +1,4 @@
-# Mimoto Compiler Toolkit
+# Mimoto - Compiler & Toolkit
 A tiny helper for building Mimoto projects
 
 # Install
@@ -12,8 +12,8 @@ npx mimoto
 ```
 
 
-# Utility function
-Watch and auto-clone a file
+# Utility functions
+Watch and auto-clone a file:
 ``` 
 npx mimoto clone <file_to_watch> <clone_destination>
 ```
