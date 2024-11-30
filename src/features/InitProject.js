@@ -12,7 +12,7 @@ const firebase = require('firebase-tools');
 const ora = require('ora');
 const Utils = require('./Utils');
 const InstallComponents = require('./InstallComponents');
-
+const DistributeMimoto = require('./DistributeMimoto');
 
 
 class InitProject
@@ -45,13 +45,13 @@ class InitProject
 
 /**
      * Initializes the project
-     * @param {string} targetDir - The target directory for installation
+     * @param {string} sTargetDir - The target directory for installation
      */
-	async init(targetDir)
+	async init(sTargetDir)
 	{
 
 		const inquirer = await Utils.getInquirer();
-		const configPath = path.join(targetDir, 'mimoto.config.json');
+		const configPath = path.join(sTargetDir, 'mimoto.config.json');
 
 		let config = {};
 		let bHasExistingConfig = false;
@@ -68,7 +68,7 @@ class InitProject
 		if (!config.name || !config.author || !config.email) {
 			const getDefaults = (() => {
 				const currentDir = process.cwd();
-				const targetBaseName = path.basename(targetDir);
+				const targetBaseName = path.basename(sTargetDir);
 				
 				// Check if we're in the root of the Mimoto npm package
 				const isMimotoPackageRoot = (() => {
@@ -100,32 +100,40 @@ class InitProject
 				};
 			})();
 
+
+			let answers;
+
 			// Use these defaults in the prompts
-			const answers = await inquirer.prompt([
-				{
-					type: 'input',
-					name: 'name',
-					message: 'Enter the project name:',
-					default: getDefaults.name
-				},
-				{
-					type: 'input',
-					name: 'author',
-					message: 'Enter the author name:',
-					default: getDefaults.author
-				},
-				{
-					type: 'input',
-					name: 'email',
-					message: 'Enter the author email:',
-					default: getDefaults.email,
-					validate: function(email) {
-						// Simple email validation
-						const valid = /^\S+@\S+\.\S+$/.test(email);
-						return valid || 'Please enter a valid email address';
+			try {
+				answers = await inquirer.prompt([
+					{
+						type: 'input',
+						name: 'name',
+						message: 'Enter the project name:',
+						default: getDefaults.name
+					},
+					{
+						type: 'input',
+						name: 'author',
+						message: 'Enter the author name:',
+						default: getDefaults.author
+					},
+					{
+						type: 'input',
+						name: 'email',
+						message: 'Enter the author email:',
+						default: getDefaults.email,
+						validate: function(email) {
+							// Simple email validation
+							const valid = /^\S+@\S+\.\S+$/.test(email);
+							return valid || 'Please enter a valid email address';
+						}
 					}
-				}
-			]);
+				]);
+			} catch (error) {
+
+				Utils.handleError(error);
+			}
 
 			config.name = answers.name;
 			config.author = answers.author;
@@ -162,7 +170,7 @@ class InitProject
 		console.log(`│`);
 		console.log(`└───`);
 
-		this.installChoice = await this.checkExistingFiles(targetDir);
+		this.installChoice = await this.checkExistingFiles(sTargetDir);
 
 		if (this.installChoice === 'cancel') {
 			console.log('Installation cancelled.');
@@ -193,7 +201,7 @@ class InitProject
 
 				for (const file of files) {
 					const sourcePath = path.join(sourceDir, file);
-					const destPath = path.join(targetDir, file);
+					const destPath = path.join(sTargetDir, file);
 					
 					// // Skip mimoto.config.json and package.json if they already exist
 					// if ((file === 'mimoto.config.json' || file === 'package.json') && await fs.pathExists(destPath)) {
@@ -201,7 +209,7 @@ class InitProject
 					// 	continue;
 					// }
 					
-					await this._handleFileOperation(sourcePath, destPath, targetDir);
+					await this._handleFileOperation(sourcePath, destPath, sTargetDir);
 				}
 
 				console.log(`┌───`);
@@ -211,9 +219,17 @@ class InitProject
 				console.log(`└───`);
 			}
 
+
+			// 5. distribute Mimoto.js
+			const mimotoDistributor = new DistributeMimoto(config);
+
+			// 6. distribute
+			mimotoDistributor.distribute(sTargetDir);
+			
+			
 		// You might want to use projectName and authorName in your file operations
 			// For example, updating package.json with these details
-			await this._updatePackageJson(targetDir);
+			await this._updatePackageJson(sTargetDir);
 
 			try {
 
@@ -221,7 +237,7 @@ class InitProject
 				const shouldInstall = await this.shouldRunNpmInstall();
 
 				if (shouldInstall) {
-					await this._runNpmInstall(targetDir);
+					await this._runNpmInstall(sTargetDir);
 				}
 			} catch (error) {
 				if (error.name === 'ExitPromptError') {
@@ -244,7 +260,7 @@ class InitProject
 
 			if (installComponents) {
 				// Initialize and run InstallComponents
-				const installComponentsInstance = new InstallComponents(targetDir);
+				const installComponentsInstance = new InstallComponents(sTargetDir);
 				await installComponentsInstance.install();
 			} else {
 				console.log('Skipping component installation.');
@@ -264,7 +280,7 @@ class InitProject
 
 			if (installEmulators) {
 				// Initialize Firebase Emulators
-				await this.initializeFirebaseEmulators(targetDir);
+				await this.initializeFirebaseEmulators(sTargetDir);
 			} else {
 				console.log('Skipping Firebase Emulators installation.');
 			}
@@ -309,7 +325,7 @@ class InitProject
      * @param {string} sourcePath - Source path of the file/folder
      * @param {string} destPath - Destination path for the file/folder
      */
-    async _handleFileOperation(sourcePath, destPath, targetDir) {
+    async _handleFileOperation(sourcePath, destPath, sTargetDir) {
 		const inquirer = await Utils.getInquirer();
         switch (this.installChoice) {
             case 'clean':
@@ -336,8 +352,8 @@ class InitProject
                     const getRelativePath = (fullPath) => {
                         const projectRoot = process.cwd();
                         const relativePath = path.relative(projectRoot, fullPath);
-                        const targetDirName = path.basename(targetDir);
-                        return relativePath.replace(new RegExp(`^${targetDirName}[\\/]`), '');
+                        const sTargetDirName = path.basename(sTargetDir);
+                        return relativePath.replace(new RegExp(`^${sTargetDirName}[\\/]`), '');
                     };
 
                     const relativeDestPath = getRelativePath(destPath);
@@ -528,10 +544,10 @@ class InitProject
 
 	/**
 	 * Initializes Firebase Emulators with interactive input
-	 * @param {string} targetDir - The target directory for installation
+	 * @param {string} sTargetDir - The target directory for installation
 	 * @returns {Promise<void>}
 	 */
-	async initializeFirebaseEmulators(targetDir) {
+	async initializeFirebaseEmulators(sTargetDir) {
 		console.log('┌───');
 		console.log('│');
 		console.log('│   Initializing Firebase Emulators...');
@@ -543,7 +559,7 @@ class InitProject
 		
 		try {
 			// Change to the target directory
-			process.chdir(targetDir);
+			process.chdir(sTargetDir);
 			
 			await firebase.init({
 				feature: 'emulators',
@@ -569,13 +585,13 @@ class InitProject
 
 	/**
 	 * Checks for existing files and prompts the user for installation preferences
-	 * @param {string} targetDir - The target directory for installation
+	 * @param {string} sTargetDir - The target directory for installation
 	 * @returns {Promise<string>} The user's choice: 'clean', 'selective', or 'skip'
 	 */
-	async checkExistingFiles(targetDir) {
+	async checkExistingFiles(sTargetDir) {
 
 		const inquirer = await Utils.getInquirer();
-		const files = await fs.readdir(targetDir);
+		const files = await fs.readdir(sTargetDir);
 		const existingFiles = files.filter(file => !file.startsWith('.'));
 
 		if (existingFiles.length === 0) {
@@ -592,7 +608,7 @@ class InitProject
 		const filesList = [];
 
 		existingFiles.forEach(file => {
-			const fullPath = path.join(targetDir, file);
+			const fullPath = path.join(sTargetDir, file);
 			if (fs.statSync(fullPath).isDirectory()) {
 				folders.push(file);
 			} else {
@@ -653,10 +669,10 @@ class InitProject
 
 	/**
 	 * Runs npm install
-	 * @param {string} targetDir - The target directory for installation
+	 * @param {string} sTargetDir - The target directory for installation
 	 * @returns {Promise<void>}
 	 */
-	async _runNpmInstall(targetDir) {
+	async _runNpmInstall(sTargetDir) {
 		return new Promise((resolve, reject) => {
 
 			console.log(`┌───`);
@@ -669,7 +685,7 @@ class InitProject
 			const spinner = ora('Installing packages...').start();
 
 			const npmInstall = spawn('npm', ['install', '--loglevel=error'], { 
-				cwd: targetDir, 
+				cwd: sTargetDir, 
 				shell: true,
 				stdio: ['inherit', 'pipe', 'pipe'] // Pipe stdout and stderr
 			});
@@ -718,12 +734,12 @@ class InitProject
 		});
 	}
 
-    async _updatePackageJson(targetDir)
+    async _updatePackageJson(sTargetDir)
 	{
 
-		const mimotoJsonPath = path.join(targetDir, 'mimoto.config.json');
-        const packageJsonPath = path.join(targetDir, 'package.json');
-        const webpackConfigPath = path.join(targetDir, 'webpack.config.js');
+		const mimotoJsonPath = path.join(sTargetDir, 'mimoto.config.json');
+        const packageJsonPath = path.join(sTargetDir, 'package.json');
+        const webpackConfigPath = path.join(sTargetDir, 'webpack.config.js');
         
         let updatedFiles = [];
 

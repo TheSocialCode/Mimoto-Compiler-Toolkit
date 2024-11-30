@@ -42,27 +42,27 @@ class DistributeMimoto
 	/**
 	 * Distribute
 	 */
-	distribute()
+	distribute(sTargetDir)
 	{
 		return new Promise((resolve, reject) =>
 		{
 			// 1. verify or skip
 			if (!this._config.mimoto || !this._config.mimoto.target) { resolve(); return; }
 
-			// 2. compose path to Mimoto.js in bin
-			const filePath = path.join(__dirname, '/../bin/thesocialcode/mimoto/Mimoto.min.js');
-
-			// 3. helper
+			// 2. helper
 			let classRoot = this;
 
+			// 3. compose path of source file
+			const sFilePath = path.join(__dirname, '/../../bin/thesocialcode/mimoto/Mimoto.min.js');
+
 			// 4. read the file content
-			fs.readFile(filePath, 'utf8', function(err, data)
+			fs.readFile(sFilePath, 'utf8', function(err, data)
 			{
 				// a. validate or exit
 				if (err) { console.error(err); process.exit(1); }
 
 				// b. compose path of target file
-				let sTargetFilePath = path.join(classRoot._config.RUNTIME_ROOT, classRoot._config.mimoto.target, 'Mimoto.js')
+				let sTargetFilePath = path.join(sTargetDir, classRoot._config.mimoto.target, 'Mimoto.js')
 
 				// c. extract the directory path from the file path
 				const sDirPath = path.dirname(sTargetFilePath);
@@ -77,7 +77,12 @@ class DistributeMimoto
 					if (err) { console.error(err); process.exit(1); }
 
 					// II. report
-					console.log('✨ - Mimoto.js has been added to the project!\n');
+					console.log('\n');
+					console.log(`┌───`);
+					console.log(`│`);
+					console.log(`│   🌱 - \x1b[1mMimoto\x1b[0m 💬 - Mimoto.min.js has been added to the project!`);
+					console.log(`│`);
+					console.log(`└───`);
 
 					// III. report
 					resolve();
