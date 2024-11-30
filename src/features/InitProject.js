@@ -820,7 +820,7 @@ class InitProject
             await fs.rename(boilerplateJSPath, newFilePath);
 
 			// Define the path for the copied file
-            const targetDir = path.join(sTargetDir, 'public', 'static', 'js');
+            const targetDir = path.join(sTargetDir, 'public', 'static', 'js', 'core');
             const copiedFilePath = path.join(targetDir, path.basename(newFilePath).replace('.src.js', '.js'));
 
             // Ensure the target directory exists
@@ -866,10 +866,10 @@ class InitProject
 		if (await fs.pathExists(boilerplateIndexPath)) {
             let boilerplateIndex = await fs.readFile(boilerplateIndexPath, 'utf8');
 
-            boilerplateIndexPath = boilerplateIndexPath.replace(/{{PROJECT_NAME}}/g, this.project.name);
-            boilerplateIndexPath = boilerplateIndexPath.replace(/{{PROJECT_ID}}/g, this.project.name.split(/[\s-_]+/).map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(''));
-            boilerplateIndexPath = boilerplateIndexPath.replace(/{{PROJECT_AUTHOR}}/g, this.project.author);
-            boilerplateIndexPath = boilerplateIndexPath.replace(/{{PROJECT_EMAIL}}/g, this.project.email);
+            boilerplateIndex = boilerplateIndex.replace(/{{PROJECT_NAME}}/g, this.project.name);
+            boilerplateIndex = boilerplateIndex.replace(/{{PROJECT_ID}}/g, this.project.name.split(/[\s-_]+/).map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(''));
+            boilerplateIndex = boilerplateIndex.replace(/{{PROJECT_AUTHOR}}/g, this.project.author);
+            boilerplateIndex = boilerplateIndex.replace(/{{PROJECT_EMAIL}}/g, this.project.email);
 
             await fs.writeFile(boilerplateIndexPath, boilerplateIndex);
 			
