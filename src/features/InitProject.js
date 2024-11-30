@@ -761,6 +761,13 @@ class InitProject
         
         let updatedFiles = [];
 
+
+		const sProjectID = this.project.name
+			.split(/[\s-_]+/) // Split by spaces, hyphens, or underscores
+			.map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()) // Capitalize first letter of each word
+			.join(''); // Join them together without spaces
+
+
         if (await fs.pathExists(mimotoJsonPath)) {
             const mimotoJson = JSON.parse(await fs.readFile(mimotoJsonPath, 'utf8'));
             
@@ -793,7 +800,7 @@ class InitProject
             let webpackConfig = await fs.readFile(webpackConfigPath, 'utf8');
 
             webpackConfig = webpackConfig.replace(/{{PROJECT_NAME}}/g, this.project.name);
-            webpackConfig = webpackConfig.replace(/{{PROJECT_ID}}/g, this.project.name.split(/[\s-_]+/).map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(''));
+            webpackConfig = webpackConfig.replace(/{{PROJECT_ID}}/g, sProjectID);
             webpackConfig = webpackConfig.replace(/{{PROJECT_AUTHOR}}/g, this.project.author);
             webpackConfig = webpackConfig.replace(/{{PROJECT_EMAIL}}/g, this.project.email);
 
@@ -805,13 +812,13 @@ class InitProject
             let boilerplateJS = await fs.readFile(boilerplateJSPath, 'utf8');
 
             boilerplateJS = boilerplateJS.replace(/{{PROJECT_NAME}}/g, this.project.name);
-            boilerplateJS = boilerplateJS.replace(/{{PROJECT_ID}}/g, this.project.name.split(/[\s-_]+/).map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(''));
+            boilerplateJS = boilerplateJS.replace(/{{PROJECT_ID}}/g, sProjectID);
             boilerplateJS = boilerplateJS.replace(/{{PROJECT_AUTHOR}}/g, this.project.author);
             boilerplateJS = boilerplateJS.replace(/{{PROJECT_EMAIL}}/g, this.project.email);
 
             await fs.writeFile(boilerplateJSPath, boilerplateJS);
 			
-			const sBoilerplateJSFileName = this.project.name.split(/[\s-_]+/).map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join('') + '.src.js';
+			const sBoilerplateJSFileName = sProjectID + '.src.js';
 
             // Define the new file path
             const newFilePath = path.join(path.dirname(boilerplateJSPath), sBoilerplateJSFileName);
@@ -836,13 +843,13 @@ class InitProject
             let boilerplateCSS = await fs.readFile(boilerplateCSSPath, 'utf8');
 
             boilerplateCSS = boilerplateCSS.replace(/{{PROJECT_NAME}}/g, this.project.name);
-            boilerplateCSS = boilerplateCSS.replace(/{{PROJECT_ID}}/g, this.project.name.split(/[\s-_]+/).map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(''));
+            boilerplateCSS = boilerplateCSS.replace(/{{PROJECT_ID}}/g, sProjectID);
             boilerplateCSS = boilerplateCSS.replace(/{{PROJECT_AUTHOR}}/g, this.project.author);
             boilerplateCSS = boilerplateCSS.replace(/{{PROJECT_EMAIL}}/g, this.project.email);
 
             await fs.writeFile(boilerplateCSSPath, boilerplateCSS);
 			
-			const sBoilerplateCSSFileName = this.project.name.split(/[\s-_]+/).map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join('') + '.src.css';
+			const sBoilerplateCSSFileName = sProjectID + '.src.css';
 
             // Define the new file path
             const newFilePath = path.join(path.dirname(boilerplateCSSPath), sBoilerplateCSSFileName);
@@ -867,7 +874,7 @@ class InitProject
             let boilerplateIndex = await fs.readFile(boilerplateIndexPath, 'utf8');
 
             boilerplateIndex = boilerplateIndex.replace(/{{PROJECT_NAME}}/g, this.project.name);
-            boilerplateIndex = boilerplateIndex.replace(/{{PROJECT_ID}}/g, this.project.name.split(/[\s-_]+/).map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(''));
+            boilerplateIndex = boilerplateIndex.replace(/{{PROJECT_ID}}/g, sProjectID);
             boilerplateIndex = boilerplateIndex.replace(/{{PROJECT_AUTHOR}}/g, this.project.author);
             boilerplateIndex = boilerplateIndex.replace(/{{PROJECT_EMAIL}}/g, this.project.email);
 
