@@ -13,7 +13,12 @@ const Utils = require('./Utils');
 class InstallComponents {
     constructor(targetDir) {
         this.targetDir = targetDir;
-        this.componentsPath = path.join(process.cwd(), 'components');
+
+        // Use __dirname to determine the package root
+        const packageRoot = path.resolve(__dirname, '../..');
+
+        // Set the componentsPath relative to the package root
+        this.componentsPath = path.join(packageRoot, 'components');
         this.components = this.getComponents();
     }
 

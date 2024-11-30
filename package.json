@@ -1,6 +1,6 @@
 {
     "name": "mimoto",
-    "version": "1.0.32",
+    "version": "1.0.33",
     "description": "Mimoto Compiler Toolkit",
     "license": "MIT",
     "author": "Sebastian Kersten (sebastian@thesocialcode.com)",
@@ -19,6 +19,7 @@
         "fs-extra": "^11.2.0",
         "inquirer": "^11.1.0",
         "jsdom": "^25.0.1",
+        "mimoto": "^1.0.32",
         "openai": "^4.24.1"
     },
     "repository": {
