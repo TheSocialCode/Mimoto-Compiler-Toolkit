@@ -79,7 +79,7 @@ class CombineTemplates
 
 		// 5. prepare
 		const aSourceFolders = [];
-		this._config.combine.sources.forEach(folder => aSourceFolders.push(path.join(this._config.RUNTIME_ROOT, folder)));
+		this._config.combine.sources.forEach(folder => aSourceFolders.push(path.join(__dirname, folder)));
 
 		// 6. watch file changes
 		const watcher = chokidar.watch(aSourceFolders, {
