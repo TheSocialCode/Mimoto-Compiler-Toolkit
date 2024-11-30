@@ -757,6 +757,7 @@ class InitProject
         const webpackConfigPath = path.join(sTargetDir, 'webpack.config.js');
         const boilerplateJSPath = path.join(sTargetDir, 'src/js/MimotoProjectBoilerplate.src.js');
         const boilerplateCSSPath = path.join(sTargetDir, 'src/css/MimotoProjectBoilerplate.src.css');
+        const boilerplateIndexPath = path.join(sTargetDir, 'public/index.html');
         
         let updatedFiles = [];
 
@@ -801,7 +802,7 @@ class InitProject
         }
 
 		if (await fs.pathExists(boilerplateJSPath)) {
-            let boilerplateJS = await fs.readFile(webpackConfigPath, 'utf8');
+            let boilerplateJS = await fs.readFile(boilerplateJSPath, 'utf8');
 
             boilerplateJS = boilerplateJS.replace(/{{PROJECT_NAME}}/g, this.project.name);
             boilerplateJS = boilerplateJS.replace(/{{PROJECT_ID}}/g, this.project.name.split(/[\s-_]+/).map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(''));
@@ -828,11 +829,11 @@ class InitProject
             // Copy the renamed file to the target directory
             await fs.copyFile(newFilePath, copiedFilePath);
 
-            updatedFiles.push(sBoilerplateJSFileName);
+            updatedFiles.push('public/static/js/' + sBoilerplateJSFileName);
         }
 
 		if (await fs.pathExists(boilerplateCSSPath)) {
-            let boilerplateCSS = await fs.readFile(webpackConfigPath, 'utf8');
+            let boilerplateCSS = await fs.readFile(boilerplateCSSPath, 'utf8');
 
             boilerplateCSS = boilerplateCSS.replace(/{{PROJECT_NAME}}/g, this.project.name);
             boilerplateCSS = boilerplateCSS.replace(/{{PROJECT_ID}}/g, this.project.name.split(/[\s-_]+/).map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(''));
@@ -859,7 +860,20 @@ class InitProject
             // Copy the renamed file to the target directory
             await fs.copyFile(newFilePath, copiedFilePath);
 
-            updatedFiles.push(sBoilerplateCSSFileName);
+            updatedFiles.push('public/static/css/' + sBoilerplateCSSFileName);
+        }
+
+		if (await fs.pathExists(boilerplateIndexPath)) {
+            let boilerplateIndex = await fs.readFile(boilerplateIndexPath, 'utf8');
+
+            boilerplateIndexPath = boilerplateIndexPath.replace(/{{PROJECT_NAME}}/g, this.project.name);
+            boilerplateIndexPath = boilerplateIndexPath.replace(/{{PROJECT_ID}}/g, this.project.name.split(/[\s-_]+/).map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(''));
+            boilerplateIndexPath = boilerplateIndexPath.replace(/{{PROJECT_AUTHOR}}/g, this.project.author);
+            boilerplateIndexPath = boilerplateIndexPath.replace(/{{PROJECT_EMAIL}}/g, this.project.email);
+
+            await fs.writeFile(boilerplateIndexPath, boilerplateIndex);
+			
+            updatedFiles.push('public/index.html');
         }
 
 
