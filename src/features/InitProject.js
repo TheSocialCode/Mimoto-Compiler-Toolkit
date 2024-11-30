@@ -764,7 +764,7 @@ class InitProject
 
 		const sProjectID = this.project.name
 			.split(/[\s-_]+/) // Split by spaces, hyphens, or underscores
-			.map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()) // Capitalize first letter of each word
+			.map(word => word.charAt(0).toUpperCase() + word.slice(1)) // Capitalize first letter, keep the rest as is
 			.join(''); // Join them together without spaces
 
 
