@@ -77,7 +77,6 @@ class DistributeMimoto
 					if (err) { console.error(err); process.exit(1); }
 
 					// II. report
-					console.log('\n');
 					console.log(`┌───`);
 					console.log(`│`);
 					console.log(`│   🌱 - \x1b[1mMimoto\x1b[0m 💬 - Mimoto.min.js has been added to the project!`);

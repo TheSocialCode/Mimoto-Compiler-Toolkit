@@ -67,7 +67,7 @@ class Startup
 					type: 'list',
 					name: 'framework',
 					message: 'What would you like me to do?',
-					choices: ['run', 'clone', 'init', 'components'],
+					choices: ['init', 'run', 'update', 'components', 'clone'],
 				}
 			];
 

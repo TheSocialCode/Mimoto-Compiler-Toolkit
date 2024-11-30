@@ -247,12 +247,7 @@ class InitProject
 					await this._runNpmInstall(sTargetDir);
 				}
 			} catch (error) {
-				if (error.name === 'ExitPromptError') {
-				  console.log('\nNpm install cancelled. You can run it manually later if needed.');
-				  process.exit(0);
-				} else {
-				  console.error('An unexpected error occurred:', error);
-				}
+				Utils.handleError(error);
 			}
 			
 			// Ask user if they want to install components
@@ -274,16 +269,26 @@ class InitProject
 			}
 
 			
-			
-			// Ask user if they want to install Firebase Emulators
-			const { installEmulators } = await inquirer.prompt([
-				{
-					type: 'confirm',
-					name: 'installEmulators',
-					message: 'Do you want to install and initialize Firebase Emulators?',
-					default: true
-				}
-			]);
+			//let installEmulators;
+
+			//try {
+
+				// Ask user if they want to install Firebase Emulators
+				const { installEmulators } = await inquirer.prompt([
+					{
+						type: 'confirm',
+						name: 'installEmulators',
+						message: 'Do you want to install and initialize Firebase Emulators?',
+						default: true
+					}
+				]);
+
+				// installEmulators = xInstallEmulators;
+
+			// } catch (error) {
+			// 	Utils.handleError(error);
+			// }
+
 
 			if (installEmulators) {
 				// Initialize Firebase Emulators

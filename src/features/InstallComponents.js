@@ -135,21 +135,28 @@ class InstallComponents {
 
             if (selectedBasenames.has(basename)) {
                 // Add or update the selected component
-                console.log(`Registering component: ${basename}`);
+                // console.log(`Registering component: ${basename}`);
                 config.components.mimoto[basename] = relativePath.replace(/\\/g, '/');
             } else if (config.components.mimoto[basename]) {
                 // Remove the component if it was previously installed but not currently selected
-                console.log(`Removing component: ${basename}`);
+                // console.log(`Removing component: ${basename}`);
                 delete config.components.mimoto[basename];
             }
         }
 
-        console.log('config =', config);
+        // console.log('config =', config);
 
         // Write updated config back to file
         const jsonString = JSON.stringify(config, null, '\t');
         await fs.writeFile(configPath, jsonString, 'utf8');
-        console.log('mimoto.config.json has been updated with the selected components.');
+
+        // II. report
+        console.log(`┌───`);
+        console.log(`│`);
+        console.log(`│   🌱 - \x1b[1mMimoto\x1b[0m 💬 - mimoto.config.json has been updated with the selected components.`);
+        console.log(`│`);
+        console.log(`└───`);
+
     }
 }
 
