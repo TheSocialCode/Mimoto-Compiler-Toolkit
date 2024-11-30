@@ -347,7 +347,7 @@ class InitProject
                 const sourceDir = path.dirname(sourcePath);
 
                 // Remove the entire cache folder
-                await fs.remove(cacheDir);
+                await fs.emptyDir(cacheDir);
                 
                 // Recreate the cache folder
                 await fs.ensureDir(cacheDir);
