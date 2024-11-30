@@ -119,7 +119,7 @@ class CombineTemplates
 		let aCombinedHtml = this._aCoreFiles.slice();
 
 		// 4. read
-		this._config.combine.sources.forEach(folder => this._readHtmlFiles(path.join(this._config.RUNTIME_ROOT, folder), aCombinedHtml));
+		this._config.combine.sources.forEach(folder => this._readHtmlFiles(path.join(process.cwd(), folder), aCombinedHtml));
 
 		try
 		{
@@ -127,8 +127,12 @@ class CombineTemplates
 			let sHTML = aCombinedHtml.join('\n');
 
 
+			const sOutputPath = path.join(process.cwd(), this._config.combine.output);
+
+			console.log('sOutputPath =', sOutputPath);
+
 			// 5. write
-			fs.writeFileSync(path.join(this._config.RUNTIME_ROOT, this._config.combine.output), sHTML);
+			fs.writeFileSync(sOutputPath, sHTML);
 
 
 			// const dom = new JSDOM(sHTML);

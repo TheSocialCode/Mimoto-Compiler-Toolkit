@@ -3,7 +3,7 @@ A tiny helper for building Mimoto projects
 
 # Install
 ```
-npm install mimoto
+npm install mimoto --save-dev
 ```
 
 # Run
