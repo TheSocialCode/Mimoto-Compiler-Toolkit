@@ -27,15 +27,12 @@ class InitProject
 
 	constructor() {
         this.installChoice = null;
-		this._inquirer = null;
 		this.project = {
 			id: '',
 			name: '',
 			author: '',
 			email: ''
 		};
-		// Set up SIGINT handler
-		this._setupSigintHandler();
 	}
 
 
@@ -306,24 +303,6 @@ class InitProject
 	// --- Private methods --------------------------------------------------------
 	// ----------------------------------------------------------------------------
 
-
-	_setupSigintHandler() {
-		if (process.platform === "win32") {
-			const rl = readline.createInterface({
-				input: process.stdin,
-				output: process.stdout
-			});
-
-			rl.on("SIGINT", () => {
-				process.emit("SIGINT");
-			});
-		}
-
-		process.on("SIGINT", () => {
-			console.log("\nInstallation cancelled by user.");
-			process.exit(0);
-		});
-	}
 
     /**
      * Handles file operations based on user's choice

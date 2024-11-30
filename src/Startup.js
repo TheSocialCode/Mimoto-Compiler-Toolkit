@@ -15,6 +15,7 @@ const CombineTemplates = require('./../src/features/CombineTemplates');
 const CloneFile = require('./../src/features/CloneFile');
 const InstallComponents = require('./features/InstallComponents');
 const Utils = require('./features/Utils');
+const readline = require("readline");
 
 
 class Startup
@@ -37,8 +38,11 @@ class Startup
 	 */
 	constructor(sCommand, aArgs)
 	{
-		// 1. init (moved to private function to allow async)
-		this.init(sCommand);
+		// 1. Set up SIGINT handler
+		this._setupSigintHandler();
+
+		// 2. init (moved to private function to allow async)
+		this._init(sCommand);
 	}
 
 
@@ -48,7 +52,13 @@ class Startup
 	// ----------------------------------------------------------------------------
 
 
-	async init(sCommand)
+	/**
+	 * Initialize compiler toolkit
+	 * @param sCommand
+	 * @returns {Promise<void>}
+	 * @private
+	 */
+	async _init(sCommand)
 	{
 		if (!sCommand)
 		{
@@ -81,7 +91,7 @@ class Startup
                 {
 					if (error.name === 'ExitPromptError')
 					{
-						
+
 						// 1. report
 						console.log('\n');
 						console.log(`┌───`);
@@ -108,12 +118,25 @@ class Startup
 
 		// Determine the target directory for initialization
         let sTargetDir;
-		const cliPath = path.resolve(process.argv[1]);
-		const cliDir = path.dirname(cliPath);
+        const executionDir = process.cwd();
 
-		if (cliDir === process.cwd()) {
-			// We're running from the directory containing cli.js
-			sTargetDir = path.join(cliDir, 'cache');
+		// Check if the script is running in the Mimoto npm package
+		let isMimotoPackage = false;
+		try {
+			const packageJsonPath = path.join(executionDir, 'package.json');
+			if (fs.existsSync(packageJsonPath)) {
+
+
+				const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+				isMimotoPackage = packageJson.name === 'mimoto'; // Replace 'mimoto' with the actual package name if different
+			}
+		} catch (error) {
+			console.error("Error reading package.json:", error);
+		}
+
+		if (isMimotoPackage) {
+			// We're running from the Mimoto npm package directory
+			sTargetDir = path.join(executionDir, 'cache');
 			// Ensure the cache directory exists
 			if (!fs.existsSync(sTargetDir)) {
 				fs.mkdirSync(sTargetDir);
@@ -122,11 +145,6 @@ class Startup
 			// We're running from elsewhere, use the current directory
 			sTargetDir = process.cwd();
 		}
-
-
-        console.log('sTargetDir =', sTargetDir);
-        return;
-
 
 
 		// Check which command was passed and call the appropriate function
@@ -207,6 +225,36 @@ class Startup
 
 				break;
 		}
+	}
+
+	/**
+	 * Set up SIGINT handler
+	 * @private
+	 */
+	_setupSigintHandler()
+	{
+		if (process.platform === "win32") {
+			const rl = readline.createInterface({
+				input: process.stdin,
+				output: process.stdout
+			});
+
+			rl.on("SIGINT", () => {
+				process.emit("SIGINT");
+			});
+		}
+
+		process.on("SIGINT", () => {
+
+			console.log('\n');
+			console.log(`┌───`);
+			console.log(`│`);
+			console.log(`│  🌱 - \x1b[1mMimoto\x1b[0m 💬 - Halt request granted!`);
+			console.log(`│`);
+			console.log(`└───`);
+
+			process.exit(0);
+		});
 	}
 
 }
