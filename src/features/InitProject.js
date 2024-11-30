@@ -18,6 +18,8 @@ const DistributeMimoto = require('./DistributeMimoto');
 class InitProject
 {
 
+	// data
+	_config = null;
 
 
 	// ----------------------------------------------------------------------------
@@ -25,7 +27,12 @@ class InitProject
 	// ----------------------------------------------------------------------------
 
 
-	constructor() {
+	constructor(config) {
+
+		// 1. store
+		this._config = config;
+
+
         this.installChoice = null;
 		this.project = {
 			id: '',
@@ -221,11 +228,11 @@ class InitProject
 
 
 			// 5. distribute Mimoto.js
-			const mimotoDistributor = new DistributeMimoto(config);
+			const mimotoDistributor = new DistributeMimoto(this._config);
 
 			// 6. distribute
 			mimotoDistributor.distribute(sTargetDir);
-			
+
 			
 		// You might want to use projectName and authorName in your file operations
 			// For example, updating package.json with these details

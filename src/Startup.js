@@ -145,12 +145,51 @@ class Startup
 			sTargetDir = process.cwd();
 		}
 
+
+		let mimotoDistributor;
+
+
+		// 4. load configuration file mimoto.config.json
+		const config = (() =>
+		{
+			// a. get root directory
+			// let sRootDir = '';
+			// const args = process.argv.slice(2); // removes the first two default elements
+			// args.forEach((val, index) => { if (val === '-root') { sRootDir = args[index + 1]; } });
+			// const RUNTIME_ROOT = path.join(process.cwd(), sRootDir);
+
+			// b. load
+			try
+			{
+				// I. point to the directory where the script is executed, not where it is located
+				const configFile = path.join(sTargetDir, 'mimoto.config.json');
+
+				// II. load and convert
+				const config = JSON.parse(fs.readFileSync(configFile, 'utf8'));
+
+				// III. extend
+				// config.RUNTIME_ROOT = RUNTIME_ROOT;
+
+				// IV. send
+				return config;
+
+			} catch(error) {
+
+				// I. report error
+				console.log('🚨 - WARNING - Missing config file \u001b[1m\u001B[31mmimoto.config.json\u001B[0m\u001b[22m in project root');
+
+				// II. exit
+				process.exit(1);
+			}
+		})();
+
+
 		// Check which command was passed and call the appropriate function
 		switch (sCommand.toLowerCase()) {
 			case 'init':
 
 
-				let initProject = new InitProject();
+				let initProject = new InitProject(config);
 				initProject.init(sTargetDir);
 
 				break;
@@ -171,6 +210,17 @@ class Startup
 
 				break;
 
+			case 'update':
+
+
+				// 5. distribute Mimoto.js
+				mimotoDistributor = new DistributeMimoto(config);
+
+				// 6. distribute
+				mimotoDistributor.distribute(sTargetDir);
+
+				break;
+
 			case 'compile':
 
 
@@ -178,48 +228,10 @@ class Startup
 
 			default:
 
-				// 4. load configuration file mimoto.config.json
-				const config = (() =>
-				{
-					// a. get root directory
-					let sRootDir = '';
-					const args = process.argv.slice(2); // removes the first two default elements
-					args.forEach((val, index) => { if (val === '-root') { sRootDir = args[index + 1]; } });
-					const RUNTIME_ROOT = path.join(process.cwd(), sRootDir);
 
-					// b. load
-					try
-					{
-						// I. point to the directory where the script is executed, not where it is located
-						const configFile = path.join(RUNTIME_ROOT, 'mimoto.config.json');
-
-						// II. load and convert
-						const config = JSON.parse(fs.readFileSync(configFile, 'utf8'));
-
-						// III. extend
-						config.RUNTIME_ROOT = RUNTIME_ROOT;
-
-						// IV. send
-						return config;
-
-					} catch(error) {
-
-						// I. report error
-						console.log('🚨 - WARNING - Missing config file \u001b[1m\u001B[31mmimoto.config.json\u001B[0m\u001b[22m in project root');
-
-						// II. exit
-						process.exit(1);
-					}
-				})();
-
-				// 5. distribute Mimoto.js
-				const mimotoDistributor = new DistributeMimoto(config);
-
-				// 6. distribute
-				let distributor = mimotoDistributor.distribute();
 
 				// 7. setup template combiner
-				distributor.then(() => { const templateCombiner = new CombineTemplates(config); })
+				const templateCombiner = new CombineTemplates(config);
 
 				break;
 		}
