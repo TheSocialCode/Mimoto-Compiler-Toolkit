@@ -810,13 +810,23 @@ class InitProject
 
             await fs.writeFile(boilerplateJSPath, boilerplateJS);
 			
-			const sBoilerplateJSFileName = this.project.name.split(/[\s-_]+/).map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join('') + '.js';
+			const sBoilerplateJSFileName = this.project.name.split(/[\s-_]+/).map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join('') + '.src.js';
 
             // Define the new file path
             const newFilePath = path.join(path.dirname(boilerplateJSPath), sBoilerplateJSFileName);
 
             // Rename the file
             await fs.rename(boilerplateJSPath, newFilePath);
+
+			// Define the path for the copied file
+            const targetDir = path.join(sTargetDir, 'public', 'static', 'js');
+            const copiedFilePath = path.join(targetDir, path.basename(newFilePath).replace('.src.js', '.js'));
+
+            // Ensure the target directory exists
+            await fs.ensureDir(targetDir);
+
+            // Copy the renamed file to the target directory
+            await fs.copyFile(newFilePath, copiedFilePath);
 
             updatedFiles.push(sBoilerplateJSFileName);
         }
@@ -831,13 +841,23 @@ class InitProject
 
             await fs.writeFile(boilerplateCSSPath, boilerplateCSS);
 			
-			const sBoilerplateCSSFileName = this.project.name.split(/[\s-_]+/).map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join('') + '.css';
+			const sBoilerplateCSSFileName = this.project.name.split(/[\s-_]+/).map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join('') + '.src.css';
 
             // Define the new file path
             const newFilePath = path.join(path.dirname(boilerplateCSSPath), sBoilerplateCSSFileName);
 
             // Rename the file
             await fs.rename(boilerplateCSSPath, newFilePath);
+
+            // Define the path for the copied file
+            const targetDir = path.join(sTargetDir, 'public', 'static', 'css');
+            const copiedFilePath = path.join(targetDir, path.basename(newFilePath).replace('.src.css', '.css'));
+
+            // Ensure the target directory exists
+            await fs.ensureDir(targetDir);
+
+            // Copy the renamed file to the target directory
+            await fs.copyFile(newFilePath, copiedFilePath);
 
             updatedFiles.push(sBoilerplateCSSFileName);
         }

@@ -2,7 +2,15 @@
  * {{PROJECT_NAME}}
  * @author - {{PROJECT_AUTHOR}} ({{PROJECT_EMAIL}})
  */
- 
+
+
+/**
+ * Run Tailwind CSS in the root of your project to compile your own file:
+ *
+ * npx tailwindcss -i ./src/css/{{PROJECT_ID}}.src.css -o ./public/css/{{PROJECT_ID}}.css --watch
+ *
+ */
+
 
 @tailwind base;
 @tailwind components;
