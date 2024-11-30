@@ -125,8 +125,7 @@ class Startup
 		try {
 			const packageJsonPath = path.join(executionDir, 'package.json');
 			if (fs.existsSync(packageJsonPath)) {
-
-
+				
 				const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
 				isMimotoPackage = packageJson.name === 'mimoto'; // Replace 'mimoto' with the actual package name if different
 			}
@@ -145,7 +144,6 @@ class Startup
 			// We're running from elsewhere, use the current directory
 			sTargetDir = process.cwd();
 		}
-
 
 		// Check which command was passed and call the appropriate function
 		switch (sCommand.toLowerCase()) {
