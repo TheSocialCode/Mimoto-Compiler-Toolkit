@@ -38,10 +38,7 @@ class Startup
 	 */
 	constructor(sCommand, aArgs)
 	{
-		// 1. Set up SIGINT handler
-		this._setupSigintHandler();
-
-		// 2. init (moved to private function to allow async)
+		// 1. init (moved to private function to allow async)
 		this._init(sCommand);
 	}
 
@@ -89,25 +86,7 @@ class Startup
 				}
                 catch (error)
                 {
-					if (error.name === 'ExitPromptError')
-					{
-
-						// 1. report
-						console.log('\n');
-						console.log(`┌───`);
-						console.log(`│`);
-                        console.log(`│  🌱 - \x1b[1mMimoto\x1b[0m 💬 - Halt request granted!`);
-                        console.log(`│`);
-                        console.log(`└───`);
-
-						// 2. exit
-						process.exit(0);
-					}
-					else
-					{
-						// 1. report
-						console.error("Error during project initialization:", error);
-					}
+                    Utils.handleError(error, 'Error during project initialization');
 				}
 			}
 
@@ -132,8 +111,9 @@ class Startup
 		} catch (error) {
 			console.error("Error reading package.json:", error);
 		}
-
-		if (isMimotoPackage) {
+        
+		if (Utils.getProjectRoot() === Utils.getMimotoRoot())
+		{
 			// We're running from the Mimoto npm package directory
 			sTargetDir = path.join(executionDir, 'cache');
 			// Ensure the cache directory exists
@@ -154,11 +134,7 @@ class Startup
 		// 4. load configuration file mimoto.config.json
 		const config = (() =>
 		{
-			// a. get root directory
-			// let sRootDir = '';
-			// const args = process.argv.slice(2); // removes the first two default elements
-			// args.forEach((val, index) => { if (val === '-root') { sRootDir = args[index + 1]; } });
-			// const RUNTIME_ROOT = path.join(process.cwd(), sRootDir);
+			
 
 			// b. load
 			try
@@ -248,36 +224,6 @@ class Startup
 
 				break;
 		}
-	}
-
-	/**
-	 * Set up SIGINT handler
-	 * @private
-	 */
-	_setupSigintHandler()
-	{
-		if (process.platform === "win32") {
-			const rl = readline.createInterface({
-				input: process.stdin,
-				output: process.stdout
-			});
-
-			rl.on("SIGINT", () => {
-				process.emit("SIGINT");
-			});
-		}
-
-		process.on("SIGINT", () => {
-
-			console.log('\n');
-			console.log(`┌───`);
-			console.log(`│`);
-			console.log(`│  🌱 - \x1b[1mMimoto\x1b[0m 💬 - Halt request granted!`);
-			console.log(`│`);
-			console.log(`└───`);
-
-			process.exit(0);
-		});
 	}
 
 }

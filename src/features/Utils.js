@@ -1,22 +1,117 @@
-class Utils {
-    static async getInquirer() {
-      if (!Utils._inquirer) {
-        const inquirerModule = await import('inquirer');
-        Utils._inquirer = inquirerModule.default;
-      }
-      return Utils._inquirer;
-    }
+/**
+ * Mimoto Compiler Toolkit - A tiny helper for building Mimoto projects
+ * @author - Sebastian Kersten (sebastian@thesocialcode.com)
+ */
 
-    static handleError(error)
-    {
-      if (error.name === 'ExitPromptError')
-        {
-        console.log('Prompt was forcefully closed by the user.');
-        process.exit(0);
-      } else {
-        console.error("Error during prompting:", error);
-      }
-    }
-  }
-  
-  module.exports = Utils;
+
+class Utils
+{
+
+	// private static variables
+	static _inquirer = null;
+	static _sProjectRoot = null;
+	static _sMimotoRoot = null;
+
+	// private static variables
+	static _MIMOTO_TEST_DIR = 'cache';
+
+
+
+	/**
+	 * Get the Inquirer module
+	 * @returns {Promise<import('inquirer')>}
+	 */
+	static async getInquirer()
+	{
+		// 1. check if already loaded
+		if (!Utils._inquirer)
+		{
+			// a. import
+			const inquirerModule = await import('inquirer');
+
+			// b. store
+			Utils._inquirer = inquirerModule.default;
+		}
+
+		// 2. send
+		return Utils._inquirer;
+	}
+
+	/**
+	 * Handle an error
+	 * @param Error error 
+	 * @param string sMessageUnknowError 
+	 */
+	static handleError(error, sMessageUnknowError = 'An unknown error occurred')
+	{
+		// 1. check if user requested exit
+		if (error.name === 'ExitPromptError')
+		{
+			// a. report
+			console.log('\n');
+			console.log(`┌───`);
+			console.log(`│`);
+			console.log(`│  🌱 - \x1b[1mMimoto\x1b[0m 💬 - Halt request granted!`);
+			console.log(`│`);
+			console.log(`└───`);
+
+			// b. exit
+			process.exit(0);
+		}
+		else
+		{
+			// a. report
+			console.error(sMessageUnknowError, error);
+		}
+	}
+
+	/**
+	 * Get the project root
+	 * @returns {string}
+	 */
+	static getProjectRoot()
+	{
+		// 1. check if already loaded
+		if (!Utils._sProjectRoot)
+		{
+			// a. get
+			Utils._sProjectRoot = process.cwd();
+
+			// b. check if project root is the mimoto root and set default test dir if so
+			if (Utils._sProjectRoot === Utils.getMimotoRoot()) Utils._sProjectRoot = path.join(Utils._sProjectRoot, Utils._MIMOTO_TEST_DIR);
+		}
+
+		// 2. send
+		return process.cwd();
+	}
+
+	/**
+	 * Get the Mimoto root
+	 * @returns {string}
+	 */
+	static getMimotoRoot()
+	{
+		// 1. check if already loaded
+		if (!Utils._sMimotoRoot)
+		{
+			try {
+				// a. find
+				const mimotoPackagePath = require.resolve('mimoto/package.json');
+
+				// b. store
+				Utils._sMimotoRoot = path.dirname(mimotoPackagePath);
+			}
+			catch (error)
+			{
+				// a. store (if require.resolve fails, it means the script is likely running inside the package itself)
+				Utils._sMimotoRoot = process.cwd();
+			}
+		}
+
+		// 2. send
+		return Utils._sMimotoRoot;
+	}
+
+}
+
+module.exports = Utils;
