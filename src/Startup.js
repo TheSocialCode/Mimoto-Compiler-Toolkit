@@ -95,6 +95,11 @@ class Startup
 		}
 
 
+		console.log('Project root =', Utils.getProjectRoot());
+		console.log('Mimoto root =', Utils.getMimotoRoot());
+		return;
+
+
 		// Determine the target directory for initialization
         let sTargetDir;
         const executionDir = process.cwd();

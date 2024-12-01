@@ -4,6 +4,11 @@
  */
 
 
+// 1. import core node classes
+const path = require('path');
+const fs = require('fs');
+
+
 class Utils
 {
 
@@ -39,8 +44,8 @@ class Utils
 
 	/**
 	 * Handle an error
-	 * @param Error error 
-	 * @param string sMessageUnknowError 
+	 * @param {Error} error
+	 * @param {string} sMessageUnknowError
 	 */
 	static handleError(error, sMessageUnknowError = 'An unknown error occurred')
 	{
@@ -77,8 +82,13 @@ class Utils
 			// a. get
 			Utils._sProjectRoot = process.cwd();
 
+			console.log('Utils._sProjectRoot = ', Utils._sProjectRoot);
+			console.log('Utils.sMimotoRoot = ', Utils.getMimotoRoot());
+
 			// b. check if project root is the mimoto root and set default test dir if so
-			if (Utils._sProjectRoot === Utils.getMimotoRoot()) Utils._sProjectRoot = path.join(Utils._sProjectRoot, Utils._MIMOTO_TEST_DIR);
+			if (Utils.isMimotoPackage()) {
+				Utils._sProjectRoot = path.join(Utils._sProjectRoot, Utils._MIMOTO_TEST_DIR);
+			}
 		}
 
 		// 2. send
@@ -110,6 +120,17 @@ class Utils
 
 		// 2. send
 		return Utils._sMimotoRoot;
+	}
+
+	static isMimotoPackage() {
+		try {
+			const packageJsonPath = path.join(Utils._sProjectRoot, 'package.json');
+			const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+			return packageJson.name === 'mimoto';
+		} catch (error) {
+			console.error('Error reading package.json:', error);
+			return false;
+		}
 	}
 
 }
