@@ -62,7 +62,7 @@ class Startup
 			const questions = [
 				{
 					type: 'list',
-					name: 'framework',
+					name: 'command',
 					message: 'What would you like me to do?',
 					choices: ['init', 'run', 'update', 'components', 'clone'],
 				}
@@ -79,9 +79,9 @@ class Startup
 					const answers = await inquirer.prompt(questions);
 
 					// 3. Display the selected framework
-					console.log(`You selected: ${answers.framework}`);
+					console.log(`You selected: ${answers.command}`); // #TODO - Show the selected framework
 
-					return answers.framework;
+					return answers.command;
 
 				}
                 catch (error)
@@ -95,139 +95,76 @@ class Startup
 		}
 
 
-		console.log('Project root =', Utils.getProjectRoot());
+		console.log('Project root =', );
 		console.log('Mimoto root =', Utils.getMimotoRoot());
-		return;
 
-
-		// Determine the target directory for initialization
-        let sTargetDir;
-        const executionDir = process.cwd();
-
-		// Check if the script is running in the Mimoto npm package
-		let isMimotoPackage = false;
-		try {
-			const packageJsonPath = path.join(executionDir, 'package.json');
-			if (fs.existsSync(packageJsonPath)) {
-				
-				const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
-				isMimotoPackage = packageJson.name === 'mimoto'; // Replace 'mimoto' with the actual package name if different
-			}
-		} catch (error) {
-			console.error("Error reading package.json:", error);
-		}
-        
-		if (Utils.getProjectRoot() === Utils.getMimotoRoot())
-		{
-			// We're running from the Mimoto npm package directory
-			sTargetDir = path.join(executionDir, 'cache');
-			// Ensure the cache directory exists
-			if (!fs.existsSync(sTargetDir)) {
-				fs.mkdirSync(sTargetDir);
-			}
-		} else {
-			// We're running from elsewhere, use the current directory
-			sTargetDir = process.cwd();
-		}
-
-
-		let mimotoDistributor;
-		let bDefaultConfig = false;
-		const configFile = path.join(sTargetDir, 'mimoto.config.json');
-
-
-		// 4. load configuration file mimoto.config.json
-		const config = (() =>
-		{
-			
-
-			// b. load
-			try
-			{
-				// IV. load and send
-				return JSON.parse(fs.readFileSync(configFile, 'utf8'));
-
-			} catch(error) {
-
-				// I. report error
-				// console.log('🚨 - WARNING - Missing config file \u001b[1m\u001B[31mmimoto.config.json\u001B[0m\u001b[22m in project root');
-
-				// II. Attempt to copy the config file from the boilerplate
-				try {
-					const boilerplateDir = path.join(__dirname, '..', 'boilerplates', 'project');
-					const sourceConfigPath = path.join(boilerplateDir, 'mimoto.config.json');
-					const targetConfigPath = path.join(sTargetDir, 'mimoto.config.json');
-
-					if (fs.existsSync(sourceConfigPath)) {
-						fs.copyFileSync(sourceConfigPath, targetConfigPath);
-						// console.log('✅ - Copied mimoto.config.json from boilerplate to project root.');
-
-						bDefaultConfig = true;
-
-						return JSON.parse(fs.readFileSync(configFile, 'utf8'));
-
-					} else {
-						console.error('❌ - Boilerplate config file not found. Please ensure it exists at:', sourceConfigPath);
-						process.exit(1);
-					}
-				} catch (copyError) {
-					console.error('Error copying config file from boilerplate:', copyError);
-					process.exit(1);
-				}
-			}
-		})();
 
 
 		// Check which command was passed and call the appropriate function
-		switch (sCommand.toLowerCase()) {
+		switch (sCommand.toLowerCase())
+		{
 			case 'init':
 
+				// 1. init
+				let initProject = new InitProject();
 
-				let initProject = new InitProject(config, bDefaultConfig);
-				initProject.init(sTargetDir);
-
-				break;
-
-			case 'clone':
-
-				// check if args 0 en 1 gezet en exist?
-				new CloneFile(aArgs[0], aArgs[1]);
+				// 2. run
+				await initProject.init();
 
 				break;
-
-
-			case 'components':
-
-				// check if args 0 en 1 gezet en exist?
-				const componentInstaller = new InstallComponents(sTargetDir);
-				componentInstaller.install();
-
-				break;
-
-			case 'update':
-
-
-				// 5. distribute Mimoto.js
-				mimotoDistributor = new DistributeMimoto(config);
-
-				// 6. distribute
-				mimotoDistributor.distribute(sTargetDir);
-
-				break;
-
-			case 'compile':
-
-
-			// mimoto run
 
 			default:
 
 
+				// #TODO - no command = run / compile
 
-				// 7. setup template combiner
-				const templateCombiner = new CombineTemplates(config);
+				// #TODO - validate config (first time automatically run init?
 
-				break;
+
+
+				switch (sCommand.toLowerCase())
+				{
+					case 'clone':
+
+						// check if args 0 en 1 gezet en exist?
+						new CloneFile(aArgs[0], aArgs[1]);
+
+						break;
+
+
+					case 'components':
+
+						// check if args 0 en 1 gezet en exist?
+						const componentInstaller = new InstallComponents(sTargetDir);
+						componentInstaller.install();
+
+						break;
+
+					case 'update':
+
+						// 5. distribute Mimoto.js
+						let mimotoDistributor = new DistributeMimoto(config);
+
+						// 6. distribute
+						mimotoDistributor.distribute(sTargetDir);
+
+						break;
+
+					case 'compile':
+
+
+
+					// mimoto run
+
+					default:
+
+
+						// 7. setup template combiner
+						const templateCombiner = new CombineTemplates(config);
+
+						break;
+				}
+
 		}
 	}
 

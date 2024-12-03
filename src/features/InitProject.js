@@ -52,49 +52,26 @@ class InitProject
 	// ----------------------------------------------------------------------------
 
 
-/**
+	/**
      * Initializes the project
-     * @param {string} sTargetDir - The target directory for installation
      */
-	async init(sTargetDir)
+	async init()
 	{
-
+		// 1. prepare
 		const inquirer = await Utils.getInquirer();
-		const configPath = path.join(sTargetDir, 'mimoto.config.json');
 
-		let config = {};
-		let bHasExistingConfig = false;
-		if (await fs.pathExists(configPath)) {
-			try {
-				config = JSON.parse(await fs.readFile(configPath, 'utf8'));
-				bHasExistingConfig = true;
-			} catch (error) {
-				console.error('Error reading mimoto.config.json:', error);
-			}
-		}
+		// 2. load
+		let config = Utils.getConfig();
 
-		// Ask for project name, author name, and author email if not in config
-		if (!config.name || !config.author || !config.email) {
+		// 3. ask for project and author information if not in config
+		if (!config.name || !config.author || !config.email)
+		{
 			const getDefaults = (() => {
-				const currentDir = process.cwd();
-				const targetBaseName = path.basename(sTargetDir);
 				
-				// Check if we're in the root of the Mimoto npm package
-				const isMimotoPackageRoot = (() => {
-					try {
-						const packageJsonPath = path.join(currentDir, 'package.json');
-						if (fs.existsSync(packageJsonPath)) {
-							const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
-							return packageJson.name === 'mimoto';
-						}
-					} catch (error) {
-						console.error('Error reading package.json:', error);
-					}
-					return false;
-				})();
+				const targetBaseName = path.basename(Utils.getProjectRoot());
 
 				// Check if we're in the development environment
-				if (isMimotoPackageRoot && targetBaseName === 'cache') {
+				if (Utils.isMimotoPackage() && targetBaseName === 'cache') {
 					return {
 						name: "Mimoto Project Boilerplate",
 						author: "Sebastian Kersten",

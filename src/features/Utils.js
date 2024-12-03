@@ -16,6 +16,8 @@ class Utils
 	static _inquirer = null;
 	static _sProjectRoot = null;
 	static _sMimotoRoot = null;
+	static _config = null;
+	static _bIsMimotoPackage = false;
 
 	// private static variables
 	static _MIMOTO_TEST_DIR = 'cache';
@@ -82,17 +84,28 @@ class Utils
 			// a. get
 			Utils._sProjectRoot = process.cwd();
 
-			console.log('Utils._sProjectRoot = ', Utils._sProjectRoot);
-			console.log('Utils.sMimotoRoot = ', Utils.getMimotoRoot());
+			try
+			{
+				// I. prepare
+				const packageJsonPath = path.join(Utils._sProjectRoot, 'package.json');
 
-			// b. check if project root is the mimoto root and set default test dir if so
-			if (Utils.isMimotoPackage()) {
-				Utils._sProjectRoot = path.join(Utils._sProjectRoot, Utils._MIMOTO_TEST_DIR);
+				// II. read
+				const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+
+				// III. determine
+				Utils._bIsMimotoPackage = (packageJson.name === 'mimoto');
 			}
+			catch (error)
+			{
+				// no package.json or error reading it
+			}
+			
+			// c. check if project root is the mimoto root and set default test dir if so
+			if (Utils._bIsMimotoPackage) Utils._sProjectRoot = path.join(Utils._sProjectRoot, Utils._MIMOTO_TEST_DIR);
 		}
 
 		// 2. send
-		return process.cwd();
+		return Utils._sProjectRoot;
 	}
 
 	/**
@@ -122,17 +135,75 @@ class Utils
 		return Utils._sMimotoRoot;
 	}
 
-	static isMimotoPackage() {
-		try {
-			const packageJsonPath = path.join(Utils._sProjectRoot, 'package.json');
-			const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
-			return packageJson.name === 'mimoto';
-		} catch (error) {
-			console.error('Error reading package.json:', error);
-			return false;
-		}
+	static isMimotoPackage()
+	{
+		// 1. get project root
+		Utils.getProjectRoot();
+
+		// 2. send
+		return Utils._bIsMimotoPackage;
 	}
 
+	/**
+	 * Get the Mimoto config
+	 * @returns {Promise<null>}
+	 */
+	static async getConfig()
+	{
+
+		// 1. check if already loaded
+		if (!Utils._config)
+		{
+
+			let bDefaultConfig = false;
+
+
+			const configFile = path.join(Utils.getProjectRoot(), 'mimoto.config.json');
+
+
+			// 4. load configuration file mimoto.config.json
+			const config = (() =>
+			{
+				// b. load
+				try
+				{
+					// IV. load and send
+					return JSON.parse(fs.readFileSync(configFile, 'utf8'));
+
+				} catch(error) {
+
+					// I. report error
+					// console.log('🚨 - WARNING - Missing config file \u001b[1m\u001B[31mmimoto.config.json\u001B[0m\u001b[22m in project root');
+
+					// II. Attempt to copy the config file from the boilerplate
+					try {
+						const boilerplateDir = path.join(__dirname, '..', 'boilerplates', 'project');
+						const sourceConfigPath = path.join(boilerplateDir, 'mimoto.config.json');
+						const targetConfigPath = path.join(Utils.getProjectRoot(), 'mimoto.config.json');
+
+						if (fs.existsSync(sourceConfigPath)) {
+							fs.copyFileSync(sourceConfigPath, targetConfigPath);
+							// console.log('✅ - Copied mimoto.config.json from boilerplate to project root.');
+
+							bDefaultConfig = true;
+
+							return JSON.parse(fs.readFileSync(configFile, 'utf8'));
+
+						} else {
+							console.error('❌ - Boilerplate config file not found. Please ensure it exists at:', sourceConfigPath);
+							process.exit(1);
+						}
+					} catch (copyError) {
+						console.error('Error copying config file from boilerplate:', copyError);
+						process.exit(1);
+					}
+				}
+			})();
+		}
+
+		// 2. send
+		return Utils._config;
+	}
 }
 
 module.exports = Utils;
