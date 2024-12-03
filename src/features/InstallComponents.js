@@ -4,36 +4,40 @@
  */
 
 
+// import core node classes
 const inquirer = require('inquirer');
 const fs = require('fs-extra');
 const path = require('path');
+
+// import Mimoto classes
 const Utils = require('./Utils');
 
 
-class InstallComponents {
-    constructor(targetDir) {
-        this.targetDir = targetDir;
+class InstallComponents
+{
 
-        // Use __dirname to determine the package root
-        const packageRoot = path.resolve(__dirname, '../..');
 
+    // ----------------------------------------------------------------------------
+    // --- Constructor ------------------------------------------------------------
+    // ----------------------------------------------------------------------------
+
+
+    constructor()
+    {
         // Set the componentsPath relative to the package root
-        this.componentsPath = path.join(packageRoot, 'components');
+        this.componentsPath = path.join(Utils.getMimotoRoot(), 'components');
         this.components = this.getComponents();
     }
 
-    async getComponents() {
+    async getComponents()
+    {
+        // 1. load
+        let config = await Utils.getConfig();
+
+        // 2. init
         const components = [];
-        const configPath = path.join(this.targetDir, 'mimoto.config.json');
-        let config;
 
-        // Read existing config
-        try {
-            config = await fs.readJson(configPath);
-        } catch (error) {
-            config = { components: { mimoto: {} } };
-        }
-
+        // 3. read
         const installedComponents = config.components?.mimoto || {};
 
         const readComponentsRecursively = (dir, prefix = '') => {
@@ -60,15 +64,18 @@ class InstallComponents {
         return components;
     }
 
-    async install() {
+    async install()
+    {
+        // 1. prepare
         const inquirer = await Utils.getInquirer();
 
-        console.log(`│`);
-        console.log(`│   Component Installation`);
-        console.log(`│`);
+        // 2. validate
+        if (this.components.length === 0)
+        {
+            // 1. report
+            Utils.report('No components found in the /components folder.', true);
 
-        if (this.components.length === 0) {
-            console.log('No components found in the /components folder.');
+            // b. exit
             return;
         }
 
@@ -83,84 +90,70 @@ class InstallComponents {
                 }
             ]);
 
-            if (selectedComponents.length > 0) {
-                console.log('┌───');
-                console.log('│');
-                console.log('│   Installing selected components...');
-                console.log('│');
-                console.log('└───');
-                console.log('\n');
+            if (selectedComponents.length > 0)
+            {
+                Utils.report('Installing selected components...');
 
                 await this.initializeComponents(selectedComponents);
-            } else {
-                console.log('No components selected for installation.');
             }
-        } catch (error) {
-            if (error.name === 'ExitPromptError') {
-                console.log('\nComponent installation cancelled.');
-            } else {
-                console.error('An error occurred during component installation:', error);
+            else
+            {
+                Utils.report('No components selected for installation.');
             }
-        } finally {
-            console.log(`│`);
         }
-        
-        console.log(`│`);
+        catch (error)
+        {
+            Utils.handleError(error, 'Error during component installation');
+
+        }
     }
 
-    async initializeComponents(components) {
-        const configPath = path.join(this.targetDir, 'mimoto.config.json');
-        let config;
+    /**
+     * Initialize components
+     * @param components
+     * @returns {Promise<void>}
+     */
+    async initializeComponents(components)
+    {
+        // 1. load
+        let config = await Utils.getConfig();
 
-        // Read existing config or create a new one
-        try {
-            config = await fs.readJson(configPath);
-        } catch (error) {
-            config = {};
-        }
+        // 2. prepare
+        if (!config.components) config.components = {};
+        if (!config.components.mimoto) config.components.mimoto = {};
 
-        // Ensure config.components and config.components.mimoto exist
-        if (!config.components) {
-            config.components = {};
-        }
-        if (!config.components.mimoto) {
-            config.components.mimoto = {};
-        }
-
-        // Get all available components
+        // 3. get all available components
         const allComponents = await this.getComponents();
         
-        // Create a set of selected component basenames
+        // 4. create a set of selected component basenames
         const selectedBasenames = new Set(components.map(c => path.basename(c, '.html')));
 
-        // Process all available components
-        for (const component of allComponents) {
+        // 5. process all available components
+        for (const component of allComponents)
+        {
+            // a. prepare
             const relativePath = path.relative(this.componentsPath, component.value);
             const basename = path.basename(component.value, '.html');
 
-            if (selectedBasenames.has(basename)) {
-                // Add or update the selected component
-                // console.log(`Registering component: ${basename}`);
+            // b. check if component falls into the group
+            if (selectedBasenames.has(basename))
+            {
+                // I. add or update the selected component
                 config.components.mimoto[basename] = relativePath.replace(/\\/g, '/');
-            } else if (config.components.mimoto[basename]) {
-                // Remove the component if it was previously installed but not currently selected
-                // console.log(`Removing component: ${basename}`);
+            }
+            else if (config.components.mimoto[basename])
+            {
+                // I. remove the component if it was previously installed but not currently selected
                 delete config.components.mimoto[basename];
             }
         }
 
-        // console.log('config =', config);
-
-        // Write updated config back to file
+        // 6. write updated config back to file
         const jsonString = JSON.stringify(config, null, '\t');
-        await fs.writeFile(configPath, jsonString, 'utf8');
+        await fs.writeFile(path.join(Utils.getProjectRoot(),'mimoto.config.json'), jsonString, 'utf8');
 
-        // II. report
-        console.log(`┌───`);
-        console.log(`│`);
-        console.log(`│   🌱 - \x1b[1mMimoto\x1b[0m 💬 - mimoto.config.json has been updated with the selected components.`);
-        console.log(`│`);
-        console.log(`└───`);
+        // 7. report
+        Utils.report('mimoto.config.json has been updated with the selected components.');
 
     }
 }

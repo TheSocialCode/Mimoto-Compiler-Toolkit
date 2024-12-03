@@ -3,7 +3,7 @@
         "sources": [
             "src/html"
         ],
-        "output": "public/static/html/Templates.dist.html"
+        "output": "public/static/html/{{PROJECT_ID}}.dist.html"
     },
     "components": {
         "mimoto": {

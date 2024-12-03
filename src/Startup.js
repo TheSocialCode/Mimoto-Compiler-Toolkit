@@ -95,12 +95,6 @@ class Startup
 		}
 
 
-		console.log('Project root =', Utils.getProjectRoot());
-		console.log('Mimoto root =', Utils.getMimotoRoot());
-		console.log('\n✨-------\n\n');
-
-
-
 		// Check which command was passed and call the appropriate function
 		switch (sCommand.toLowerCase())
 		{
@@ -136,7 +130,7 @@ class Startup
 					case 'components':
 
 						// check if args 0 en 1 gezet en exist?
-						const componentInstaller = new InstallComponents(sTargetDir);
+						const componentInstaller = new InstallComponents();
 						componentInstaller.install();
 
 						break;

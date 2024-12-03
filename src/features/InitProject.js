@@ -163,7 +163,10 @@ class InitProject
 
 		if (this.installChoice === 'cancel')
 		{
-			console.log('Installation cancelled.'); // #TODO
+			// report
+			Utils.report('Installation cancelled.');
+
+			// exit
 			process.exit(0); // Exit the process with a success code
 		}
 
@@ -180,34 +183,25 @@ class InitProject
 
 		try {
 
-			if (this.installChoice === 'skip') {
-				console.log('\n');
-				console.log(`┌───`);
-				console.log(`│`);
-				console.log(`│   🌱 - \x1b[1mMimoto\x1b[0m 💬 - File syncing skipped.`);
-				console.log(`│`);
-				console.log(`└───`);
-			} else {
+			if (this.installChoice === 'skip')
+			{
+				Utils.report('File syncing skipped.');
+			}
+			else
+			{
 				const files = await fs.readdir(sBoilerplateSourceDir);
 
-				for (const file of files) {
+				for (const file of files)
+				{
+					// prepare
 					const sourcePath = path.join(sBoilerplateSourceDir, file);
 					const destPath = path.join(Utils.getProjectRoot(), file);
-					
-					// // Skip mimoto.config.json and package.json if they already exist
-					// if ((file === 'mimoto.config.json' || file === 'package.json') && await fs.pathExists(destPath)) {
-					// 	console.log(`🌱 - \x1b[1mMimoto\x1b[0m 💬 - Skipping existing ${file}`);
-					// 	continue;
-					// }
-					
+
+					// copy
 					await this._handleFileOperation(sourcePath, destPath, Utils.getProjectRoot());
 				}
 
-				console.log(`┌───`);
-				console.log(`│`);
-				console.log(`│  🌱 - \x1b[1mMimoto\x1b[0m 💬 - File syncing completed successfully.`);
-				console.log(`│`);
-				console.log(`└───`);
+				Utils.report('File syncing completed successfully.');
 			}
 
 
@@ -227,22 +221,37 @@ class InitProject
 				// Ask if npm install should be run
 				const shouldInstall = await this.shouldRunNpmInstall();
 
-				if (shouldInstall) {
-					await this._runNpmInstall(Utils.getProjectRoot());
-				}
-			} catch (error) {
+				// verify and install
+				if (shouldInstall) await this._runNpmInstall(Utils.getProjectRoot());
+			}
+			catch (error)
+			{
+				// report
 				Utils.handleError(error);
 			}
-			
-			// Ask user if they want to install components
-			const { installComponents } = await inquirer.prompt([
-				{
-					type: 'confirm',
-					name: 'installComponents',
-					message: 'Do you want to install any components?',
-					default: true
-				}
-			]);
+
+
+			let installComponents;
+
+			try
+			{
+				// Ask user if they want to install components
+				const { userChoice } = await inquirer.prompt([
+					{
+						type: 'confirm',
+						name: 'userChoice',
+						message: 'Do you want to install any components?',
+						default: true
+					}
+				]);
+
+				installComponents = userChoice;
+			}
+			catch (error)
+			{
+				Utils.handleError(error);
+			}
+
 
 			if (installComponents)
 			{
@@ -252,7 +261,7 @@ class InitProject
 			}
 			else
 			{
-				console.log('Skipping component installation.');
+				Utils.report('Skipping component installation.');
 			}
 
 			
@@ -278,37 +287,58 @@ class InitProject
 			}
 
 
-			if (installEmulators) {
+			// verify
+			if (installEmulators)
+			{
 				// Initialize Firebase Emulators
-				await this.initializeFirebaseEmulators(Utils.getProjectRoot());
-			} else {
-				console.log('Skipping Firebase Emulators installation.');
+				await this.initializeFirebaseEmulators();
+			}
+			else
+			{
+				// report
+				Utils.report('Skipping Firebase Emulators installation.');
 			}
 
+			// read
+			const sProjectID = this.getProjectID(this.project.name);
+
+			// report
 			console.log(`┌───`);
 			console.log(`│`);
 			console.log(`│  🌱 - \x1b[1mMimoto\x1b[0m 💬 - Installation completed successfully!`);
 			console.log(`│`);
-			console.log(`│  ✨`);
-			console.log(`│`);
-			console.log(`│     You can now run the Firebase Emulators:`);
-			console.log(`│        \x1b[1mfirebase emulators:start\x1b[0m`);
-			console.log(`│`);
-			console.log(`│     This will start all configured Firebase Emulators.`);
-			console.log(`│`);
-			console.log(`│     You will be able to access the Firebase Emulator Suite UI at:`);
-			console.log(`│        \x1b[1mhttp://localhost:4000\x1b[0m`);
-			console.log(`│`);
-			console.log(`│      Happy coding! 🚀`);
+			console.log(`│       You can now run the project utils:`);
 			console.log(`│`);
 			console.log(`│`);
-			console.log(`│    Run: \x1b[1mnpx mimoto run\x1b[0m`);
+			console.log(`│       1. Firebase Emulators:`);
+			console.log(`│          \x1b[1mfirebase emulators:start\x1b[0m`);
+			console.log(`│`);
+			console.log(`│       2. Webpack:`);
+			console.log(`│          \x1b[1mnpx webpack\x1b[0m`);
+			console.log(`│`);
+			console.log(`│       3. Tailwind:`);
+			console.log(`│          \x1b[1mnpx tailwindcss -i ./src/css/` + sProjectID + `.src.css -o ./public/css/` + sProjectID + `.css --watch\x1b[0m`);
+			console.log(`│`);
+			console.log(`│`);
+			console.log(`│       ✨ and finally,`);
+			console.log(`│`);
+			console.log(`│`);
+			console.log(`│       4. Mimoto`);
+			console.log(`│          \x1b[1mnpx mimoto run\x1b[0m`);
+			console.log(`│`);
+			console.log(`│`);
+			console.log(`│       Happy coding! 🚀`);
 			console.log(`│`);
 			console.log(`└───`);
 			console.log(``);
 
-		} catch (error) {
-			console.error('Error during file operations:', error);
+		}
+		catch (error)
+		{
+			// a. report
+			Utils.report('Error during file operations', true, error);
+
+			// b. exit
 			process.exit(1);
 		}
 	}
@@ -552,17 +582,17 @@ class InitProject
 
 	/**
 	 * Initializes Firebase Emulators with interactive input
-	 * @param {string} sTargetDir - The target directory for installation
 	 * @returns {Promise<void>}
 	 */
-	async initializeFirebaseEmulators(sTargetDir) {
-		console.log('┌───');
-		console.log('│');
-		console.log('│   Initializing Firebase Emulators...');
-		console.log('│');
-		console.log('└───');
-		console.log('\n');
-		
+	async initializeFirebaseEmulators()
+	{
+		// 1. report
+		Utils.report('Initializing Firebase Emulators...');
+
+		// 2. read
+		const sTargetDir = Utils.getProjectRoot();
+
+
 		const originalDir = process.cwd();
 		
 		try {
@@ -578,7 +608,9 @@ class InitProject
 			console.log('│');
 			console.log('│   Firebase Emulators initialized successfully.');
 			console.log('│');
-		} catch (error) {
+		}
+		catch (error)
+		{
 			console.log('┌───');
 			console.log('│');
 			console.log(`│   Error initializing Firebase Emulators: ${error.message}`);
@@ -697,12 +729,8 @@ class InitProject
 	async _runNpmInstall(sTargetDir) {
 		return new Promise((resolve, reject) => {
 
-			console.log(`┌───`);
-            console.log(`│`);
-            console.log(`│    🌱 - \x1b[1mMimoto\x1b[0m 💬 - Running npm install...`);
-            console.log(`│`);
-            console.log(`└───`);
-            console.log('\n');
+			Utils.report('Running npm install...');
+
 
 			const spinner = ora('Installing packages...').start();
 
@@ -738,8 +766,12 @@ class InitProject
 
 				console.log(output);
 
-				if (code === 0) {
-					console.log('\n🌱 - \x1b[1mMimoto\x1b[0m 💬 - npm install completed successfully.\n');
+				if (code === 0)
+				{
+					// report
+					Utils.report('npm install completed successfully.');
+
+					// exit
 					resolve();
 				}
 				else
@@ -752,8 +784,14 @@ class InitProject
 			});
 
 			npmInstall.on('error', (error) => {
+
+				// stop
 				spinner.stop();
-				console.error(`Error during npm install: ${error.message}`);
+
+				// report
+				Utils.report(`Error during npm install: ${error.message}`, true);
+
+				// exit
 				reject(error);
 			});
 		});
@@ -772,10 +810,7 @@ class InitProject
         let updatedFiles = [];
 
 
-		const sProjectID = this.project.name
-			.split(/[\s-_]+/) // Split by spaces, hyphens, or underscores
-			.map(word => word.charAt(0).toUpperCase() + word.slice(1)) // Capitalize first letter, keep the rest as is
-			.join(''); // Join them together without spaces
+		const sProjectID = this.getProjectID(this.project.name);
 
 
         if (await fs.pathExists(mimotoJsonPath)) {
@@ -908,6 +943,13 @@ class InitProject
         }
 	}
 
+	getProjectID(sProjectName)
+	{
+		return this.project.name
+			.split(/[\s-_]+/) // Split by spaces, hyphens, or underscores
+			.map(word => word.charAt(0).toUpperCase() + word.slice(1)) // Capitalize first letter, keep the rest as is
+			.join(''); // Join them together without spaces
+	}
 }
 
 module.exports = InitProject;
