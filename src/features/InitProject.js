@@ -46,7 +46,6 @@ class InitProject
 
 
 
-
 	// ----------------------------------------------------------------------------
 	// --- Public methods ---------------------------------------------------------
 	// ----------------------------------------------------------------------------
@@ -61,13 +60,14 @@ class InitProject
 		const inquirer = await Utils.getInquirer();
 
 		// 2. load
-		let config = Utils.getConfig();
+		let config = await Utils.getConfig();
 
 		// 3. ask for project and author information if not in config
 		if (!config.name || !config.author || !config.email)
 		{
+
 			const getDefaults = (() => {
-				
+
 				const targetBaseName = path.basename(Utils.getProjectRoot());
 
 				// Check if we're in the development environment
@@ -148,7 +148,8 @@ class InitProject
 		console.log(`│       \x1b[1m\x1b[92m${this.project.name}\x1b[0m`);
 		console.log(`│   	 \x1B[3mby ${this.project.author} (${this.project.email})\x1B[0m`);
 
-		if (bHasExistingConfig) {
+		if (Utils.hasExistingConfig())
+		{
 			console.log(`│`);
 			console.log('│       \x1B[3m(From existing mimoto.config.json)\x1B[0m');
 		}
@@ -156,19 +157,23 @@ class InitProject
 		console.log(`│`);
 		console.log(`└───`);
 
-		this.installChoice = await this.checkExistingFiles(sTargetDir);
 
-		if (this.installChoice === 'cancel') {
-			console.log('Installation cancelled.');
+		this.installChoice = await this.checkExistingFiles(Utils.getProjectRoot());
+
+
+		if (this.installChoice === 'cancel')
+		{
+			console.log('Installation cancelled.'); // #TODO
 			process.exit(0); // Exit the process with a success code
 		}
 
 		// Define the source directory for your boilerplates
-		const sourceDir = path.join(__dirname, '..', '..', 'boilerplates', 'project');
+		const sBoilerplateSourceDir = path.join(Utils.getMimotoRoot(), 'boilerplates', 'project');
 
 		// Check if the source directory exists
-		if (!await fs.pathExists(sourceDir)) {
-			console.error(`Error: Boilerplate directory not found at ${sourceDir}`);
+		if (!await fs.pathExists(sBoilerplateSourceDir))
+		{
+			console.error(`Error: Boilerplate directory not found at ${sBoilerplateSourceDir}`);
 			console.log('Please ensure that the boilerplate directory exists and try again.');
 			process.exit(1);
 		}
@@ -183,11 +188,11 @@ class InitProject
 				console.log(`│`);
 				console.log(`└───`);
 			} else {
-				const files = await fs.readdir(sourceDir);
+				const files = await fs.readdir(sBoilerplateSourceDir);
 
 				for (const file of files) {
-					const sourcePath = path.join(sourceDir, file);
-					const destPath = path.join(sTargetDir, file);
+					const sourcePath = path.join(sBoilerplateSourceDir, file);
+					const destPath = path.join(Utils.getProjectRoot(), file);
 					
 					// // Skip mimoto.config.json and package.json if they already exist
 					// if ((file === 'mimoto.config.json' || file === 'package.json') && await fs.pathExists(destPath)) {
@@ -195,7 +200,7 @@ class InitProject
 					// 	continue;
 					// }
 					
-					await this._handleFileOperation(sourcePath, destPath, sTargetDir);
+					await this._handleFileOperation(sourcePath, destPath, Utils.getProjectRoot());
 				}
 
 				console.log(`┌───`);
@@ -210,12 +215,12 @@ class InitProject
 			const mimotoDistributor = new DistributeMimoto(this._config);
 
 			// 6. distribute
-			mimotoDistributor.distribute(sTargetDir);
+			mimotoDistributor.distribute(Utils.getProjectRoot());
 
 			
 		// You might want to use projectName and authorName in your file operations
 			// For example, updating package.json with these details
-			await this._updatePackageJson(sTargetDir);
+			await this._updatePackageJson(Utils.getProjectRoot());
 
 			try {
 
@@ -223,7 +228,7 @@ class InitProject
 				const shouldInstall = await this.shouldRunNpmInstall();
 
 				if (shouldInstall) {
-					await this._runNpmInstall(sTargetDir);
+					await this._runNpmInstall(Utils.getProjectRoot());
 				}
 			} catch (error) {
 				Utils.handleError(error);
@@ -239,21 +244,24 @@ class InitProject
 				}
 			]);
 
-			if (installComponents) {
+			if (installComponents)
+			{
 				// Initialize and run InstallComponents
-				const installComponentsInstance = new InstallComponents(sTargetDir);
+				const installComponentsInstance = new InstallComponents(Utils.getProjectRoot());
 				await installComponentsInstance.install();
-			} else {
+			}
+			else
+			{
 				console.log('Skipping component installation.');
 			}
 
 			
-			//let installEmulators;
+			let installEmulators;
 
-			//try {
+			try {
 
 				// Ask user if they want to install Firebase Emulators
-				const { installEmulators } = await inquirer.prompt([
+				const { userInput } = await inquirer.prompt([
 					{
 						type: 'confirm',
 						name: 'installEmulators',
@@ -262,16 +270,17 @@ class InitProject
 					}
 				]);
 
-				// installEmulators = xInstallEmulators;
+				installEmulators = userInput;
 
-			// } catch (error) {
-			// 	Utils.handleError(error);
-			// }
+			} catch (error)
+			{
+				Utils.handleError(error);
+			}
 
 
 			if (installEmulators) {
 				// Initialize Firebase Emulators
-				await this.initializeFirebaseEmulators(sTargetDir);
+				await this.initializeFirebaseEmulators(Utils.getProjectRoot());
 			} else {
 				console.log('Skipping Firebase Emulators installation.');
 			}
@@ -315,11 +324,18 @@ class InitProject
      * Handles file operations based on user's choice
      * @param {string} sourcePath - Source path of the file/folder
      * @param {string} destPath - Destination path for the file/folder
+     * @param {string} sTargetDir - Target directory for installation
      */
-    async _handleFileOperation(sourcePath, destPath, sTargetDir) {
+    async _handleFileOperation(sourcePath, destPath, sTargetDir)
+    {
+		// 1. prepare
 		const inquirer = await Utils.getInquirer();
-        switch (this.installChoice) {
+
+		// 2. select
+        switch (this.installChoice)
+        {
             case 'clean':
+
                 const cacheDir = path.dirname(destPath);
                 const sourceDir = path.dirname(sourcePath);
 
@@ -621,21 +637,35 @@ class InitProject
 		console.log('│');
 		console.log('└───');
 		console.log('\n');
-		
-		const { choice } = await inquirer.prompt([
-			{
-				type: 'list',
-				name: 'choice',
-				message: 'How would you like to proceed?',
-				choices: [
-					{ name: 'Perform a clean install (overwrite everything)', value: 'clean' },
-					{ name: 'Decide per folder/file', value: 'selective' },
-					{ name: 'Skip file syncing altogether', value: 'skip' },
-					{ name: 'Cancel installation', value: 'cancel' }
-				]
-			}
-		]);
 
+
+		let choice;
+
+		try
+		{
+			// ask
+			let { userInput } = await inquirer.prompt([
+				{
+					type: 'list',
+					name: 'choice',
+					message: 'How would you like to proceed?',
+					choices: [
+						{ name: 'Perform a clean install (overwrite everything)', value: 'clean' },
+						{ name: 'Decide per folder/file', value: 'selective' },
+						{ name: 'Skip file syncing altogether', value: 'skip' },
+						{ name: 'Cancel installation', value: 'cancel' }
+					]
+				}
+			]);
+
+			choice = userInput;
+		}
+		catch (error)
+		{
+			Utils.handleError(error);
+		}
+
+		// send
 		return choice;
 	}
 
@@ -711,9 +741,12 @@ class InitProject
 				if (code === 0) {
 					console.log('\n🌱 - \x1b[1mMimoto\x1b[0m 💬 - npm install completed successfully.\n');
 					resolve();
-				} else {
-					console.log('\n🌱 - \x1b[1mMimoto\x1b[0m ⚠️ - npm install failed.');
-					console.error(`npm install process exited with code ${code}\n`);
+				}
+				else
+				{
+					// a. report
+					Utils.report('npm install failed.', true);
+
 					reject(new Error(`npm install failed with code ${code}`));
 				}
 			});

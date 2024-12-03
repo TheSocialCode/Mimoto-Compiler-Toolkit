@@ -8,13 +8,12 @@
 const fs = require('fs');
 const path = require('path');
 
+// import Mimoto classes
+const Utils = require('./Utils');
+
 
 class DistributeMimoto
 {
-
-	// data
-	_config = null;
-
 
 
 	// ----------------------------------------------------------------------------
@@ -24,13 +23,8 @@ class DistributeMimoto
 
 	/**
 	 * Constructor
-	 * @param config
 	 */
-	constructor(config)
-	{
-		// 1. store
-		this._config = config;
-	}
+	constructor() {}
 
 
 
@@ -42,12 +36,15 @@ class DistributeMimoto
 	/**
 	 * Distribute
 	 */
-	distribute(sTargetDir)
+	distribute()
 	{
-		return new Promise((resolve, reject) =>
+		return new Promise(async (resolve, reject) =>
 		{
+			// 1. load
+			const config = await Utils.getConfig();
+
 			// 1. verify or skip
-			if (!this._config.mimoto || !this._config.mimoto.target) { resolve(); return; }
+			if (!config.target) { resolve(); return; }
 
 			// 2. helper
 			let classRoot = this;
@@ -62,7 +59,7 @@ class DistributeMimoto
 				if (err) { console.error(err); process.exit(1); }
 
 				// b. compose path of target file
-				let sTargetFilePath = path.join(sTargetDir, classRoot._config.mimoto.target, 'Mimoto.js')
+				let sTargetFilePath = path.join(Utils.getProjectRoot(), config.mimoto.target, 'Mimoto.js')
 
 				// c. extract the directory path from the file path
 				const sDirPath = path.dirname(sTargetFilePath);

@@ -95,8 +95,9 @@ class Startup
 		}
 
 
-		console.log('Project root =', );
+		console.log('Project root =', Utils.getProjectRoot());
 		console.log('Mimoto root =', Utils.getMimotoRoot());
+		console.log('\n✨-------\n\n');
 
 
 

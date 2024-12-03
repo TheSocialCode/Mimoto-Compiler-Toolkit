@@ -18,10 +18,16 @@ class Utils
 	static _sMimotoRoot = null;
 	static _config = null;
 	static _bIsMimotoPackage = false;
+	static _bHasExistingConfig = false;
 
 	// private static variables
 	static _MIMOTO_TEST_DIR = 'cache';
 
+
+
+	// ----------------------------------------------------------------------------
+	// --- Public methods ---------------------------------------------------------
+	// ----------------------------------------------------------------------------
 
 
 	/**
@@ -55,12 +61,7 @@ class Utils
 		if (error.name === 'ExitPromptError')
 		{
 			// a. report
-			console.log('\n');
-			console.log(`┌───`);
-			console.log(`│`);
-			console.log(`│  🌱 - \x1b[1mMimoto\x1b[0m 💬 - Halt request granted!`);
-			console.log(`│`);
-			console.log(`└───`);
+			Utils.report('Halt request granted!');
 
 			// b. exit
 			process.exit(0);
@@ -70,6 +71,27 @@ class Utils
 			// a. report
 			console.error(sMessageUnknowError, error);
 		}
+	}
+
+	/**
+	 *
+	 * @param sMessage
+	 * @param bIsError
+	 * @param error
+	 */
+	static report(sMessage, bIsError = false, error = null)
+	{
+		console.log('\n');
+		console.log(`┌───`);
+		console.log(`│`);
+		console.log(`│  ` + ((bIsError) ? '⚠️' : '🌱') + ` - \x1b[1mMimoto\x1b[0m 💬 - ` + sMessage);
+		if (error)
+		{
+			console.log(`│`);
+			console.log(`│  `, error);
+		}
+		console.log(`│`);
+		console.log(`└───`);
 	}
 
 	/**
@@ -150,51 +172,53 @@ class Utils
 	 */
 	static async getConfig()
 	{
-
 		// 1. check if already loaded
 		if (!Utils._config)
 		{
-
-			let bDefaultConfig = false;
-
-
-			const configFile = path.join(Utils.getProjectRoot(), 'mimoto.config.json');
-
-
-			// 4. load configuration file mimoto.config.json
-			const config = (() =>
+			// a. load configuration file mimoto.config.json
+			Utils._config = (() =>
 			{
-				// b. load
+				// I. prepare
+				const sConfigFilePath = path.join(Utils.getProjectRoot(), 'mimoto.config.json');
+
+				// II. load
 				try
 				{
-					// IV. load and send
-					return JSON.parse(fs.readFileSync(configFile, 'utf8'));
+					// 1. toggle
+					Utils._bHasExistingConfig = true;
 
-				} catch(error) {
+					// 2. load and send
+					return JSON.parse(fs.readFileSync(sConfigFilePath, 'utf8'));
+				}
+				catch(error)
+				{
+					// 1. Attempt to copy the config file from the boilerplate
+					try
+					{
+						// a. prepare
+						const sBoilerplateConfigPath = path.join(__dirname, '..', 'boilerplates', 'project', 'mimoto.config.json');
 
-					// I. report error
-					// console.log('🚨 - WARNING - Missing config file \u001b[1m\u001B[31mmimoto.config.json\u001B[0m\u001b[22m in project root');
+						// b. validate
+						if (fs.existsSync(sBoilerplateConfigPath))
+						{
+							// I. store
+							return JSON.parse(fs.readFileSync(sBoilerplateConfigPath, 'utf8'));
+						}
+						else
+						{
+							// I. report
+							Utils.report('Boilerplate config file not found.', true);
 
-					// II. Attempt to copy the config file from the boilerplate
-					try {
-						const boilerplateDir = path.join(__dirname, '..', 'boilerplates', 'project');
-						const sourceConfigPath = path.join(boilerplateDir, 'mimoto.config.json');
-						const targetConfigPath = path.join(Utils.getProjectRoot(), 'mimoto.config.json');
-
-						if (fs.existsSync(sourceConfigPath)) {
-							fs.copyFileSync(sourceConfigPath, targetConfigPath);
-							// console.log('✅ - Copied mimoto.config.json from boilerplate to project root.');
-
-							bDefaultConfig = true;
-
-							return JSON.parse(fs.readFileSync(configFile, 'utf8'));
-
-						} else {
-							console.error('❌ - Boilerplate config file not found. Please ensure it exists at:', sourceConfigPath);
+							// II. exit
 							process.exit(1);
 						}
-					} catch (copyError) {
-						console.error('Error copying config file from boilerplate:', copyError);
+					}
+					catch (copyError)
+					{
+						// a. report
+						Utils.report('Error copying config file from boilerplate.', true, copyError);
+
+						// b. exit
 						process.exit(1);
 					}
 				}
@@ -203,6 +227,19 @@ class Utils
 
 		// 2. send
 		return Utils._config;
+	}
+
+	/**
+	 * Check if a config file exists
+	 * @returns {boolean}
+	 */
+	static async hasExistingConfig()
+	{
+		// 1. get config
+		await Utils.getConfig();
+
+		// 2. send
+		return Utils._bHasExistingConfig;
 	}
 }
 
