@@ -803,10 +803,11 @@ class InitProject
 		const mimotoJsonPath = path.join(sTargetDir, 'mimoto.config.json');
         const packageJsonPath = path.join(sTargetDir, 'package.json');
         const webpackConfigPath = path.join(sTargetDir, 'webpack.config.js');
-        const boilerplateJSPath = path.join(sTargetDir, 'src/js/MimotoProjectBoilerplate.src.js');
-        const boilerplateCSSPath = path.join(sTargetDir, 'src/css/MimotoProjectBoilerplate.src.css');
-        const boilerplateIndexPath = path.join(sTargetDir, 'public/index.html');
-        
+		const mimotoConfigPath = path.join(sTargetDir, 'mimoto.config.json');
+		const boilerplateJSPath = path.join(sTargetDir, 'src/js/MimotoProjectBoilerplate.src.js');
+		const boilerplateCSSPath = path.join(sTargetDir, 'src/css/MimotoProjectBoilerplate.src.css');
+		const boilerplateIndexPath = path.join(sTargetDir, 'public/index.html');
+
         let updatedFiles = [];
 
 
@@ -841,7 +842,8 @@ class InitProject
             updatedFiles.push('package.json');
         }
         
-        if (await fs.pathExists(webpackConfigPath)) {
+        if (await fs.pathExists(webpackConfigPath))
+		{
             let webpackConfig = await fs.readFile(webpackConfigPath, 'utf8');
 
             webpackConfig = webpackConfig.replace(/{{PROJECT_NAME}}/g, this.project.name);
@@ -853,7 +855,8 @@ class InitProject
             updatedFiles.push('webpack.config.js');
         }
 
-		if (await fs.pathExists(boilerplateJSPath)) {
+		if (await fs.pathExists(boilerplateJSPath))
+		{
             let boilerplateJS = await fs.readFile(boilerplateJSPath, 'utf8');
 
             boilerplateJS = boilerplateJS.replace(/{{PROJECT_NAME}}/g, this.project.name);
@@ -927,6 +930,20 @@ class InitProject
 			
             updatedFiles.push('public/index.html');
         }
+
+		if (await fs.pathExists(mimotoConfigPath))
+		{
+			let mimotoConfig = await fs.readFile(mimotoConfigPath, 'utf8');
+
+			mimotoConfig = mimotoConfig.replace(/{{PROJECT_NAME}}/g, this.project.name);
+			mimotoConfig = mimotoConfig.replace(/{{PROJECT_ID}}/g, sProjectID);
+			mimotoConfig = mimotoConfig.replace(/{{PROJECT_AUTHOR}}/g, this.project.author);
+			mimotoConfig = mimotoConfig.replace(/{{PROJECT_EMAIL}}/g, this.project.email);
+
+			await fs.writeFile(mimotoConfigPath, mimotoConfig);
+			updatedFiles.push('mimoto.config.json');
+		}
+
 
 
         if (updatedFiles.length > 0) {
