@@ -8,9 +8,11 @@
 const chokidar = require("chokidar");
 const fs = require('fs');
 const path = require('path');
+const ora = require('ora');
 
 // import Mimoto util classes
 const DataUtils = require("../../toolkit/utils/DataUtils");
+const Utils = require("./Utils");
 
 
 class CombineTemplates
@@ -29,10 +31,24 @@ class CombineTemplates
 
 	/**
 	 * Constructor
-	 * @param config
 	 */
-	constructor(config)
+	constructor()
 	{
+		// 1. init
+		this._init();
+	}
+
+
+
+	// ----------------------------------------------------------------------------
+	// --- Private methods --------------------------------------------------------
+	// ----------------------------------------------------------------------------
+
+
+	async _init()
+	{
+		// 1. load
+		let config = await Utils.getConfig();
 
 		// 1. validate config file
 		if (!config.combine || !config.combine.sources)
@@ -79,7 +95,7 @@ class CombineTemplates
 
 		// 5. prepare
 		const aSourceFolders = [];
-		this._config.combine.sources.forEach(folder => aSourceFolders.push(path.join(__dirname, folder)));
+		this._config.combine.sources.forEach(folder => aSourceFolders.push(path.join(Utils.getProjectRoot(), folder)));
 
 		// 6. watch file changes
 		const watcher = chokidar.watch(aSourceFolders, {
@@ -95,12 +111,6 @@ class CombineTemplates
 	}
 
 
-
-	// ----------------------------------------------------------------------------
-	// --- Private methods --------------------------------------------------------
-	// ----------------------------------------------------------------------------
-
-
 	/**
 	 * Concatenate HTML files
 	 * @param bRebuild
@@ -111,25 +121,36 @@ class CombineTemplates
 		// 1. register
 		let start = new Date().getTime();
 
+		// const spinner = ora('Combining HTML files ...').start();
+
+
 		// 2. output
 		console.log('');
 		console.log(((bRebuild) ? 'Rebuilding' : 'Building') + ` \u001b[1m\u001b[32m${this._config.combine.output}\u001b[39m\u001b[22m ...`);
+		//spinner.text = ((bRebuild) ? 'Rebuilding' : 'Building') + ` \u001b[1m\u001b[32m${this._config.combine.output}\u001b[39m\u001b[22m ...`;
+
+
+
 
 		// 3. init
 		let aCombinedHtml = this._aCoreFiles.slice();
 
 		// 4. read
-		this._config.combine.sources.forEach(folder => this._readHtmlFiles(path.join(process.cwd(), folder), aCombinedHtml));
+		this._config.combine.sources.forEach(folder => this._readHtmlFiles(path.join(Utils.getProjectRoot(), folder), aCombinedHtml));
 
 		try
 		{
+
+
+			// Ensure the directory exists
+			const outputDir = path.dirname(path.join(Utils.getProjectRoot(), this._config.combine.output));
+
+			if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
+
 			// a.
 			let sHTML = aCombinedHtml.join('\n');
 
-
-			const sOutputPath = path.join(process.cwd(), this._config.combine.output);
-
-			console.log('sOutputPath =', sOutputPath);
+			const sOutputPath = path.join(Utils.getProjectRoot(), this._config.combine.output);
 
 			// 5. write
 			fs.writeFileSync(sOutputPath, sHTML);
@@ -160,7 +181,8 @@ class CombineTemplates
 		{
 			// 6. report error
 			console.log('\n');
-			console.log('🚨 - WARNING - Could not write to output file \u001b[1m\u001B[31m' + this._config.combine.output + '\u001B[0m\u001b[22m');
+			console.error('🚨 - WARNING - Could not write to output file \u001b[1m\u001B[31m' + this._config.combine.output + '\u001B[0m\u001b[22m');
+			console.error('Error details:', error.message);
 			process.exit(1);
 		}
 
@@ -169,6 +191,9 @@ class CombineTemplates
 
 		// 8. compose
 		const sTimestampDone = end.getFullYear() + '.' + DataUtils.addLeadingZeros(end.getMonth() + 1, 2) + '.' + DataUtils.addLeadingZeros(end.getDate(), 2) + ' ' + DataUtils.addLeadingZeros(end.getHours(), 2) + ':' + DataUtils.addLeadingZeros(end.getMinutes(), 2) + ':' + DataUtils.addLeadingZeros(end.getSeconds(), 2);
+
+		// spinner.stop();
+
 
 		// 9. output result
 		console.log('----------------------------------------------');
@@ -194,7 +219,7 @@ class CombineTemplates
 		if (currentDir === parentDir) return null;
 
 		// 4. recursively search in the parent directory
-		return _findPackageRoot(parentDir);
+		return this._findPackageRoot(parentDir);
 	}
 
 	/**
@@ -206,20 +231,20 @@ class CombineTemplates
 		let aTemplates = [];
 
 		// 2. manage
-		try {
-
+		try
+		{
 			// a. find package root
 			const packageRoot = this._findPackageRoot(process.cwd());
 
 			// b. validate or report and exit
 			if (!packageRoot)
 			{
-				console.log('Package root not found. Unable to reach node_modules folder. for adding component', sComponentName, 'in', sPackageName);
+				console.log('NPM package root not found. Unable to find `' + sPackageName + '` in node_modules folder');
 				return;
 			}
 
 			// c. compose
-			const sPackageDirectory = path.join(packageRoot, 'node_modules', sPackageName);
+			const sPackageDirectory = (Utils.isMimotoPackage()) ? path.join(packageRoot, 'components') : path.join(packageRoot, 'node_modules', sPackageName, 'components');
 
 			// d. parse all components
 			Object.keys(components).forEach(sComponentName => {

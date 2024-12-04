@@ -155,7 +155,7 @@ class Startup
 
 
 						// 7. setup template combiner
-						const templateCombiner = new CombineTemplates(config);
+						const templateCombiner = new CombineTemplates();
 
 						break;
 				}
