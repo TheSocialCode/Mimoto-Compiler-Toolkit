@@ -196,7 +196,7 @@ class Utils
 					try
 					{
 						// a. prepare
-						const sBoilerplateConfigPath = path.join(__dirname, '..', 'boilerplates', 'project', 'mimoto.config.json');
+						const sBoilerplateConfigPath = path.join(__dirname, '../..', 'boilerplates', 'project', 'mimoto.config.json');
 
 						// b. validate
 						if (fs.existsSync(sBoilerplateConfigPath))
