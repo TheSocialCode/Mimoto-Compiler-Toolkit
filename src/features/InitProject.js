@@ -273,7 +273,7 @@ class InitProject
 				const { userInput } = await inquirer.prompt([
 					{
 						type: 'confirm',
-						name: 'installEmulators',
+						name: 'userInput',
 						message: 'Do you want to install and initialize Firebase Emulators?',
 						default: true
 					}
