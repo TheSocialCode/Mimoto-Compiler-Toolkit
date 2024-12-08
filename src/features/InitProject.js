@@ -159,7 +159,7 @@ class InitProject
 
 
 		this.installChoice = await this.checkExistingFiles(Utils.getProjectRoot());
-
+		
 
 		if (this.installChoice === 'cancel')
 		{
@@ -628,9 +628,16 @@ class InitProject
 	 * @param {string} sTargetDir - The target directory for installation
 	 * @returns {Promise<string>} The user's choice: 'clean', 'selective', or 'skip'
 	 */
-	async checkExistingFiles(sTargetDir) {
+	async checkExistingFiles(sTargetDir)
+	{
+
+		console.log('sTargetDir =', sTargetDir);
 
 		const inquirer = await Utils.getInquirer();
+
+		// Ensure the "cache" directory exists
+		await fs.ensureDir(sTargetDir);
+
 		const files = await fs.readdir(sTargetDir);
 		const existingFiles = files.filter(file => !file.startsWith('.'));
 
