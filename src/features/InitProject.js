@@ -949,9 +949,10 @@ class InitProject
 
 			await fs.writeFile(mimotoConfigPath, mimotoConfig);
 			updatedFiles.push('mimoto.config.json');
+
+			// update the mimoto.config.json in memory
+			Utils.resetConfig();
 		}
-
-
 
         if (updatedFiles.length > 0) {
             console.log(`┌───`);

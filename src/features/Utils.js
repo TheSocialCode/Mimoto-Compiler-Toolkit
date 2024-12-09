@@ -230,6 +230,16 @@ class Utils
 	}
 
 	/**
+	 * Reset the Mimoto config
+	 * @returns {Promise<null>}
+	 */
+	static async resetConfig()
+	{
+		// 1. check if already loaded
+		Utils._config = null;
+	}
+
+	/**
 	 * Check if a config file exists
 	 * @returns {boolean}
 	 */
