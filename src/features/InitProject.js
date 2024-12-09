@@ -686,7 +686,7 @@ class InitProject
 			let { userInput } = await inquirer.prompt([
 				{
 					type: 'list',
-					name: 'choice',
+					name: 'userInput',
 					message: 'How would you like to proceed?',
 					choices: [
 						{ name: 'Perform a clean install (overwrite everything)', value: 'clean' },
