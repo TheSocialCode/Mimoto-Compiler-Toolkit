@@ -18,7 +18,7 @@
   },
   "devDependencies": {
     "firebase-functions-test": "^0.2.0",
-    "mimoto": "^1.0.60"
+    "mimoto": "^1.0.61"
   },
   "private": true
 }
