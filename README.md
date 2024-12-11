@@ -3,13 +3,34 @@ A tiny helper for building Mimoto projects
 
 # Install
 ```
-npm install mimoto --save-dev
+npm install mimoto
 ```
 
 # Run
+
+**1. Start Firebase Emulators:**
 ```
-npx mimoto
+firebase emulators:start
 ```
+
+**2. Start Webpack:**
+```
+npx webpack
+```
+
+**3. Start Tailwind:**
+```
+npx tailwindcss -i ./src/css/TabTap.src.css -o ./public/css/TabTap.css --watch
+```
+        
+✨ and finally,
+
+**4. Start Mimoto:**
+```
+npx mimoto run
+```
+
+This set utils compiles your js & css, and combines your Mimoto html template files.  
 
 
 # Utility functions
