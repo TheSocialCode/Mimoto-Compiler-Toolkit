@@ -34,7 +34,7 @@
     "functions": {
       "port": 9011
     },
-    "firestore": {
+    "storage": {
       "port": 9012
     },
     "database": {
