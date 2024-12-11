@@ -189,11 +189,7 @@ class InitProject
 			}
 			else
 			{
-				console.log('sBoilerplateSourceDir =', sBoilerplateSourceDir);
-
 				const files = await fs.readdir(sBoilerplateSourceDir);
-
-				console.log('files =', files);
 
 				for (const file of files)
 				{
@@ -321,7 +317,7 @@ class InitProject
 			console.log(`│          \x1b[1mnpx webpack\x1b[0m`);
 			console.log(`│`);
 			console.log(`│       3. Tailwind:`);
-			console.log(`│          \x1b[1mnpx tailwindcss -i ./src/css/` + sProjectID + `.src.css -o ./public/css/` + sProjectID + `.css --watch\x1b[0m`);
+			console.log(`│          \x1b[1mnpx tailwindcss -i ./src/css/` + sProjectID + `.src.css -o ./public/static/css/` + sProjectID + `.css --watch\x1b[0m`);
 			console.log(`│`);
 			console.log(`│`);
 			console.log(`│       ✨ and finally,`);

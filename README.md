@@ -20,7 +20,7 @@ npx webpack
 
 **3. Start Tailwind:**
 ```
-npx tailwindcss -i ./src/css/TabTap.src.css -o ./public/css/TabTap.css --watch
+npx tailwindcss -i ./src/css/TabTap.src.css -o ./public/static/css/TabTap.css --watch
 ```
         
 ✨ and finally,
