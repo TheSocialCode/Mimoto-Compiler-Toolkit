@@ -189,7 +189,11 @@ class InitProject
 			}
 			else
 			{
+				console.log('sBoilerplateSourceDir =', sBoilerplateSourceDir);
+
 				const files = await fs.readdir(sBoilerplateSourceDir);
+
+				console.log('files =', files);
 
 				for (const file of files)
 				{
@@ -630,9 +634,7 @@ class InitProject
 	 */
 	async checkExistingFiles(sTargetDir)
 	{
-
-		console.log('sTargetDir =', sTargetDir);
-
+		// 1. prepare
 		const inquirer = await Utils.getInquirer();
 
 		// Ensure the "cache" directory exists

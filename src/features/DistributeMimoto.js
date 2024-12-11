@@ -5,7 +5,7 @@
 
 
 // import core classes
-const fs = require('fs');
+const fs = require('fs-extra');
 const path = require('path');
 
 // import Mimoto classes
@@ -43,29 +43,27 @@ class DistributeMimoto
 			// 1. load
 			const config = await Utils.getConfig();
 
-			// 1. verify or skip
-			if (!config.target) { resolve(); return; }
-
-			// 2. helper
-			let classRoot = this;
+			// 2. verify or skip
+			if (!config.mimoto || !config.mimoto.target) { resolve(); return; }
 
 			// 3. compose path of source file
-			const sFilePath = path.join(__dirname, '/../../bin/thesocialcode/mimoto/Mimoto.min.js');
+			const sFilePath = path.join(Utils.getMimotoRoot(), 'bin/thesocialcode/mimoto/Mimoto.min.js');
 
 			// 4. read the file content
-			fs.readFile(sFilePath, 'utf8', function(err, data)
+			fs.readFile(sFilePath, 'utf8', async function(err, data)
 			{
+			
 				// a. validate or exit
 				if (err) { console.error(err); process.exit(1); }
 
 				// b. compose path of target file
-				let sTargetFilePath = path.join(Utils.getProjectRoot(), config.mimoto.target, 'Mimoto.js')
-
+				let sTargetFilePath = path.join(Utils.getProjectRoot(), config.mimoto.target, 'Mimoto.js');
+				
 				// c. extract the directory path from the file path
 				const sDirPath = path.dirname(sTargetFilePath);
 
-				// d. create the directory if it doesn't exist
-				if (!fs.existsSync(sDirPath)) fs.mkdirSync(sDirPath, { recursive: true });
+				// d. ensure the directory exists
+				await fs.ensureDir(sDirPath);
 
 				// e. write Mimoto.js to target
 				fs.writeFile(sTargetFilePath, data, 'utf8', function(err)
