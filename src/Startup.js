@@ -121,8 +121,11 @@ class Startup
 				{
 					case 'clone':
 
-						// check if args 0 en 1 gezet en exist?
-						new CloneFile(aArgs[0], aArgs[1]);
+						// Ask user for source and destination details
+						const { sourceFile, destinationFile } = await this.askForCloneDetails();
+
+						// Use the provided details
+						new CloneFile(sourceFile, destinationFile);
 
 						break;
 
@@ -161,6 +164,23 @@ class Startup
 				}
 
 		}
+	}
+
+	async askForCloneDetails() {
+		const inquirer = await Utils.getInquirer();
+		const questions = [
+			{
+				type: 'input',
+				name: 'sourceFile',
+				message: 'Please enter the path of the file to be copied:',
+			},
+			{
+				type: 'input',
+				name: 'destinationFile',
+				message: 'Please enter the destination path and filename:',
+			}
+		];
+		return await inquirer.prompt(questions);
 	}
 
 }

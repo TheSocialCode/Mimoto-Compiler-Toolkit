@@ -53,3 +53,8 @@ For more information on how to use these components, see [Mimoto Firebase Toolki
 
 # Future features
 - Auto remove comments from HTML files
+
+# During development
+```
+node cli.js
+````

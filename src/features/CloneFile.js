@@ -7,6 +7,7 @@
 // import core classes
 const fs = require('fs');
 const path = require('path');
+const chokidar = require('chokidar');
 
 // import Mimoto util classes
 const DataUtils = require("../../toolkit/utils/DataUtils");
@@ -55,11 +56,11 @@ class CloneFile
 			process.exit(1);
 		}
 
-		// 3. watch for changes in the file
-		fs.watch(sFileToWatch, (sEventType, sFileName) =>
-		{
+		// 3. watch for changes in the file using chokidar
+		chokidar.watch(sFileToWatch).on('change', (sFilePath) => {
+
 			// a. validate or exit
-			if (!(sFileName && sEventType === 'change')) return;
+			if (!sFilePath) return;
 
 			// b. clone
 			this._cloneFile(sFileToWatch, sDestinationFile);
@@ -91,7 +92,7 @@ class CloneFile
 		if (!fs.existsSync(path.dirname(sDestinationFile))) fs.mkdirSync(path.dirname(sDestinationFile), { recursive: true });
 
 		// 2. copy the file to the destination
-		execa.copy(sFileToWatch, sDestinationFile);
+		fs.copyFileSync(sFileToWatch, sDestinationFile);
 
 		// 3. register
 		let end = new Date();
