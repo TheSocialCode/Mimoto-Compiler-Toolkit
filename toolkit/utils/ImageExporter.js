@@ -103,7 +103,7 @@ class ImageExporter
 			const meta = snapshot.after.val();
 			const metaBefore = snapshot.before.val();
 
-			console.log('metaBefore =', metaBefore);
+			// console.log('metaBefore =', metaBefore);
 
 
 			// Only proceed if we have both imageOriginal and imageFocusPoint
@@ -132,10 +132,10 @@ class ImageExporter
 					status: 'todo'
 				};
 
-				console.log('');
-				console.log('💞 exportRequest =', exportRequest);
-				console.log('');
-				console.log('');
+				// console.log('');
+				// console.log('💞 exportRequest =', exportRequest);
+				// console.log('');
+				// console.log('');
 
 				// Add to Realtime Database to trigger image processing
 				await classRoot._realtimeDatabase.ref(config.exportDataPath).push(exportRequest);
@@ -157,7 +157,7 @@ class ImageExporter
 
 	async exportImage(data, key = null)
 	{
-		console.log('🌱🌱🌱 - handleImageExportRequest - data:', data);
+		// console.log('🌱🌱🌱 - handleImageExportRequest - data:', data);
 
 
 		// handleImageExportRequest - data: {
@@ -173,11 +173,11 @@ class ImageExporter
 		const { focusPoint:imageFocusPoint, originalFile:imageOriginalFile, size:imageSize, exportDestination:imageExportDestination, previousExtension:previousExtension } = data.image;
 
 
-		console.log('focusPoint =', imageFocusPoint);
-		console.log('originalFile =', imageOriginalFile);
-		console.log('size =', imageSize);
-		console.log('exportDestination =', imageExportDestination);
-		console.log('previousExtension =', previousExtension);
+		// console.log('focusPoint =', imageFocusPoint);
+		// console.log('originalFile =', imageOriginalFile);
+		// console.log('size =', imageSize);
+		// console.log('exportDestination =', imageExportDestination);
+		// console.log('previousExtension =', previousExtension);
 
 
 
