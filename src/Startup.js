@@ -134,7 +134,7 @@ class Startup
 
 						// check if args 0 en 1 gezet en exist?
 						const componentInstaller = new InstallComponents();
-						componentInstaller.install();
+						await componentInstaller.install();
 
 						break;
 

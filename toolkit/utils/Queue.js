@@ -21,9 +21,7 @@ class Queue
 
 	// utils
 	_realtimeDatabase = null;
-
 	_queues = {};
-
 
 	/**
 	 * Constructor
@@ -40,25 +38,6 @@ class Queue
 		this._realtimeDatabase = admin.database();
 		this._sRegion = sRegion;
 		this._config = config;
-
-
-
-
-		// // 2. validate config object
-		// if (!this._config || typeof this._config !== 'object' || typeof this._config['claims'] !== 'object' || typeof this._config['claims']['users'] !== 'object')
-		// {
-		// 	// a. report
-		// 	console.log('🚨 - WARNING - Please provide a valid config object containing a claims.users object')
-		//
-		//
-		// 	// '/mimoto/google/GoogleDriveConnector/currentExportRequestId');
-		//
-		// 	// autoRemove: false,
-		//
-		//
-		// 	// b. exit
-		// 	return;
-		// }
 	}
 
 
@@ -77,14 +56,14 @@ class Queue
 	 */
 	setUpQueue(config = {})
 	{
-		// 1. prepare
-		const sQueueID = UniqID.process().toUpperCase();
-
-		// 2. validate
+		// 1. validate
 		if (!config) return 'Please provide a queue configuration object';
 
-		// 3. validate
+		// 2. validate
 		if (!config.data) return 'Please provide a data path to monitor';
+
+		// 3. prepare
+		const sQueueID = config.data;
 
 		// 4. store
 		this._queues[sQueueID] = {
@@ -97,17 +76,13 @@ class Queue
 				error: config.states?.error || 'error'
 			},
 			maxItemsDoing: 1, //config.maxItemsDoing || 1, // UNSUPPORTED FOR NOW DUE TO LOCK FEATURE THAT ALLOWS ONE ITEM AT A TIME
-			controller: config.controller || '/mimoto/utils/queue/' + sQueueID + '/lock',
+			controller: config.controller || '/mimoto/utils/queue/lock/' + sQueueID,
 			stats: config.stats || null,
 			onDoing: config.onDoing || null,
 			onDone: config.onDone || null,
 			onFinish: config.onFinish || null,
 			autoRemove: (config.autoRemove === true)
 		}
-
-
-		// console.log('🚀 - Queue - setUpQueue', sQueueID, this._queues[sQueueID]);
-
 
 		// 5. determine queue controller type
 		const bHasController = false; //(!config.controller);
@@ -120,12 +95,8 @@ class Queue
 		{
 			case true:
 
-				//console.log('🚀 - Queue - MONITOR VIA CONTROLLER');
-
 				// a. use a central controller data path to manage the queue
 				return this._functions.region(this._sRegion).database.ref(this._queues[sQueueID].controller).onWrite(async (snapshot, context) => {
-
-					// console.log('Queue IN-DATA update', sQueueID, snapshot.after.val());
 
 					// I. run
 					await classRoot._runQueue(sQueueID);
@@ -135,20 +106,13 @@ class Queue
 			case false:
 			default:
 
-				// console.log('🚀🚀🚀 - Queue - MONITOR DATA', this._queues[sQueueID].data + '/{sItemID}/' + this._queues[sQueueID].statusProperty);
-
 				// a. use a status property on the data itself to manage the queue
 				return this._functions.region(this._sRegion).database.ref(this._queues[sQueueID].data + '/{sItemID}/' + this._queues[sQueueID].statusProperty).onWrite(async (snapshot, context) => {
-
-
-					// console.log('??🔥🔥🔥🔥 - Queue item =', context.params['sItemID']);
-
 
 					// 1. validate or exit
 					const statesToCheck = [
 						this._queues[sQueueID].states.doing
 					];
-
 
 					if(this._queues[sQueueID].stats)
 					{
@@ -198,13 +162,8 @@ class Queue
 						|| snapshot.before.val() === snapshot.after.val()
 						|| !snapshot.after.exists()
 					) return;
-					
 
-					//console.log('Queue IN-DATA update', sQueueID, snapshot.after.val(), context.params['sItemID']);
-
-					
 					await classRoot._runQueue(sQueueID);
-
 				});
 		}
 	}
@@ -231,37 +190,6 @@ class Queue
 			console.log('🔒 - Lock already acquired. Exiting...');
 			return;
 		}
-
-
-		// console.log('⭐️ runQueue', sQueueID, this._queues[sQueueID]);
-
-		// Check if auto-run is enabled
-		// const parserRef = admin.database().ref('parser');
-		// const parserSnapshot = await parserRef.once('value');
-		// let parser = parserSnapshot.val();
-
-		// console.log('parser', parser);
-
-		// if (!parser)
-		// {
-		//     parser = {
-		//         autoRun: false,
-		//         parallelCalls: '1'
-		//     }
-		//
-		//     try {
-		//         const parserRef = admin.database().ref('parser');
-		//         await parserRef.set(parser);
-		//         // console.log('Parser data stored successfully');
-		//     } catch (error) {
-		//         console.error('Error storing parser data:', error);
-		//     }
-		// }
-		//
-		// if (!parser.autoRun) {
-		//     // console.log('Auto-run is disabled, skipping processing');
-		//     return null;
-		// }
 
 		// Get the number of parallel calls allowed
 		// const maxItemsDoing = parseInt(parser.parallelCalls) || 1; // Default to 1 if not set
@@ -291,9 +219,6 @@ class Queue
 			});
 		});
 
-
-		// console.log(`Found ${todoScans.length} scans with 'todo' status`);
-
 		if (aTodoDocuments.length === 0)
 		{
 
@@ -320,25 +245,11 @@ class Queue
 			}
 		}));
 
-		// Filter out any failed updates
-		// const scansToProcess = todoScans.filter(scan => scan !== null);
-
-
-		// console.log('scansToProcess', scansToProcess);
-
-
-		// console.log(`Processing ${scansToProcess.length} scans`);
-
 		// Process items one by one
 		for (const item of itemsToProcess) {
 
-			// console.log('🚨🚨🚨 - Queue item doing:', sQueueID, item.id);
-			// console.log('🚨🚨🚨 - Queue:', this._queues[sQueueID]);
-
 			if (this._queues[sQueueID].onDoing)
 			{
-				// console.log('🚨🚨🚨 - onDoing:', this._queues[sQueueID].onDoing);
-
 				await this._queues[sQueueID].onDoing(item, item.id);
 			}
 
@@ -356,26 +267,6 @@ class Queue
 			}
 
 		}
-
-
-
-		// console.log('scansToProcess', scansToProcess);
-
-
-		// console.log(`Processing ${scansToProcess.length} scans`);
-
-		// Process each scan
-		// for (const scan of scansToProcess) {
-		// 	const processingRef = this._admin.database().ref('processing');
-		// 	const newChildRef = processingRef.push(); // Generate a new child with a unique key
-
-		// 	await newChildRef.set({
-		// 		scanId: scan.id,
-		// 		fileName: scan.fileName,
-		// 		fileHash: scan.fileHash
-		// 	});
-		// }
-
 	}
 
 	async acquireLock(sQueueID)

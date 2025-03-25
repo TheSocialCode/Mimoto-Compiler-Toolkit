@@ -1,0 +1,339 @@
+<!-- Template: UploadImageDialog -->
+<dialog data-mimoto-register="UploadImageDialog" class="bg-white shadow-lg p-5 outline-none focus:ring-0 focus:outline-none w-full flex flex-col gap-3 text-left">
+	
+	<h1 class="flex-none font-bold text-2xl font-ps-primary mb-2 text-center">Upload image</h1>
+	
+	<div data-mimoto-events="{EVENT_INIT:window.Mimoto.components.UploadImageDialog.setupImageUpload(path, image, sizes, HTML, NODE)}" class="flex-auto flex flex-col">
+		<input type="file" id="imageInput" accept="image/*" class="hidden">
+		<div class="flex-auto bg-slate-50 relative flex flex-row items-start justify-center">
+			<canvas id="imageCanvas" width="400px" height="400px" class="cursor-crosshair relative"></canvas>
+			<div id="imagePlaceholder" class="hidden absolute inset-0 flex flex-row items-center justify-center">
+				<div data-mimoto-action="window.Mimoto.components.UploadImageDialog.selectImage()" class=" text-slate-300 hover:text-slate-400 cursor-pointer">
+					<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-20">
+						<path stroke-linecap="round" stroke-linejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
+					</svg>
+				</div>
+			</div>
+		</div>
+		
+		<div class="flex flex-row gap-2 items-center py-3">
+			<div class="flex-auto">
+				<div data-mimoto-action="window.Mimoto.components.UploadImageDialog.selectImage()" class="bg-slate-700 text-white rounded-md py-1.5 px-3 cursor-pointer hover:bg-black select-none outline-none float-left">Select image</div>
+			</div>
+			<div class="flex-auto flex flex-row gap-4 items-center justify-end">
+				<div id="buttonResetFocusPoint" data-mimoto-action="window.Mimoto.components.UploadImageDialog.resetFocusPoint()" class="hidden flex-none flex flex-row gap-2 items-center hover:text-slate-700 cursor-pointer pointer-events-auto">
+					<div class="flex-none bg-black text-white rounded-full p-1 w-fit mx-auto">
+						<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4">
+							<path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+						</svg>
+					</div>
+					<div class="flex-none">Reset focus point</div>
+				</div>
+				<div id="buttonRemoveImage" data-mimoto-action="window.Mimoto.components.UploadImageDialog.removeImage()" class="hidden flex-none flex flex-row gap-2 items-center hover:text-slate-700 cursor-pointer pointer-events-auto">
+					<div class="flex-none bg-black text-white rounded-full p-1 w-fit mx-auto">
+						<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4">
+							<path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+						</svg>
+					</div>
+					<div class="flex-none">Remove image</div>
+				</div>
+			</div>
+		
+		</div>
+	
+	
+	</div>
+	
+	<div class="flex-none mt-5">
+		<button data-mimoto-action="cancel()" class="bg-gray-50 text-gray-500 rounded-md py-1.5 px-3 cursor-pointer hover:bg-gray-100 hover:text-gray-800 select-none outline-none float-left">Cancel</button>
+		<button data-mimoto-action="window.Mimoto.components.UploadImageDialog.uploadImage().close(if(isTrue(bRemoveImage),{},data()))" data-mimoto-class="{'hidden':isFalse(bIsReadyForStorage)}" class="hidden bg-slate-700 text-white rounded-md py-1.5 px-3 cursor-pointer hover:bg-black select-none outline-none float-right">Ok</button>
+	</div>
+	
+	
+	<script>
+		
+		window.Mimoto.components.UploadImageDialog = {
+			
+			_imageUploadCanvas: null,
+			_imageUploadCanvasContext: null,
+			_imageUploadInput: null,
+			_imageUploadPlaceholder: null,
+			_imageUploadPreview: null,
+			_imageUploadFocusPoint: null,
+			_imageUploadButtonResetFocusPoint: null,
+			_imageUploadButtonRemoveImage: null,
+			_imageUploadNode: null,
+			
+			_imageUploadOriginalImagePath: null,
+			_imageUploadOriginalFocusPoint: null,
+			_imageUploadOriginalPreview: null,
+			_imageExportSizes: null,
+			
+			_imageUploadNewImagePath: null,
+			_imageUploadNewFocusPoint: null,
+			
+			
+			setupImageUpload: function(sImagePath, image, aSizes, elNode, node)
+			{
+				// store
+				this._imageUploadNode = node;
+				
+				this._imageUploadOriginalImagePath = sImagePath;
+				this._imageUploadOriginalFocusPoint = image?.meta?.focusPoint;
+				this._imageUploadOriginalPreview = image?.original || '';
+				this._imageExportSizes = aSizes || {};
+				
+				// console.log('this._imageUploadOriginalImagePath', this._imageUploadOriginalImagePath);
+				
+				this._imageUploadFocusPoint = this._imageUploadOriginalFocusPoint || { x: 0.5, y: 0.5 }; // Default to center
+				
+				// Find the canvas element within elNode
+				this._imageUploadCanvas = elNode.querySelector('#imageCanvas');
+				this._imageUploadCanvasContext = this._imageUploadCanvas.getContext('2d');
+				this._imageUploadInput = elNode.querySelector('#imageInput');
+				this._imageUploadPlaceholder = elNode.querySelector('#imagePlaceholder');
+				this._imageUploadButtonResetFocusPoint = elNode.querySelector('#buttonResetFocusPoint');
+				this._imageUploadButtonRemoveImage = elNode.querySelector('#buttonRemoveImage');
+				
+				this._imageUploadPreview = new Image();
+				this._imageUploadInput.addEventListener('change', this.handleImageUpload.bind(this));
+				
+				// If sImagePath is not empty, load and preview the image
+				if (this._imageUploadOriginalPreview) {
+					this.loadAndDisplayImage(this._imageUploadOriginalPreview);
+				} else {
+					this.displayPlaceholder();
+				}
+			},
+			
+			selectImage: function() {
+				this._imageUploadInput.click();
+			},
+			
+			loadAndDisplayImage: function(imageSrc) {
+				
+				this._imageUploadNode.getRoot().view.Mimoto.ui.setLocalVar('bRemoveImage', false);
+				
+				// Show the placeholder
+				this._imageUploadPlaceholder.classList.add('hidden');
+				
+				this._imageUploadPreview.src = imageSrc;
+				this._imageUploadPreview.onload = () => {
+					// Set the current image
+					// Adjust the canvas size to match the image's dimensions
+					const maxWidth = this._imageUploadCanvas.parentElement.clientWidth;
+					const maxHeight = this._imageUploadCanvas.parentElement.clientHeight;
+					
+					const aspectRatio = this._imageUploadPreview.width / this._imageUploadPreview.height;
+					let newWidth = maxWidth;
+					let newHeight = maxWidth / aspectRatio;
+					
+					if (newHeight > maxHeight) {
+						newHeight = maxHeight;
+						newWidth = maxHeight * aspectRatio;
+					}
+					
+					this._imageUploadCanvas.width = newWidth;
+					this._imageUploadCanvas.height = newHeight;
+					
+					// Draw the image onto the canvas
+					this._imageUploadCanvasContext.drawImage(this._imageUploadPreview, 0, 0, newWidth, newHeight);
+					
+					// Draw the focus point
+					this.drawFocusPoint();
+					
+					// Add click event listener to set focus point only when image is loaded
+					this._imageUploadCanvas.addEventListener('click', (e) => {
+						const rect = this._imageUploadCanvas.getBoundingClientRect();
+						this._imageUploadFocusPoint.x = (e.clientX - rect.left) / this._imageUploadCanvas.width;
+						this._imageUploadFocusPoint.y = (e.clientY - rect.top) / this._imageUploadCanvas.height;
+						
+						this.drawFocusPoint();
+						
+						// Show the reset button since focus point has been moved
+						this._imageUploadButtonResetFocusPoint.classList.remove('hidden');
+					});
+					
+					// Show the remove image button since an image is loaded
+					this._imageUploadButtonRemoveImage.classList.remove('hidden');
+					
+					// verify
+					const bHasChanges = (this._imageUploadNewImagePath !== this._imageUploadOriginalImagePath || JSON.stringify(this._imageUploadNewFocusPoint) !== JSON.stringify(this._imageUploadOriginalFocusPoint));
+					
+					// toggle
+					this._imageUploadNode.getRoot().view.Mimoto.ui.setLocalVar('bIsReadyForStorage', bHasChanges);
+				};
+			},
+			
+			handleImageUpload: function (e)
+			{
+				const file = e.target.files[0];
+				
+				if (!file) return;
+				const reader = new FileReader();
+				reader.onload = (event) => {
+					
+					// Reset focus point to center
+					this._imageUploadFocusPoint = {
+						x: 0.5,
+						y: 0.5
+					};
+					
+					this.loadAndDisplayImage(event.target.result);
+					
+					// Show the remove image button since an image is uploaded
+					this._imageUploadButtonRemoveImage.classList.remove('hidden');
+				};
+				reader.readAsDataURL(file);
+			},
+			
+			drawFocusPoint: function()
+			{
+				// Redraw the image to clear previous drawings
+				this._imageUploadCanvasContext.drawImage(this._imageUploadPreview, 0, 0, this._imageUploadCanvas.width, this._imageUploadCanvas.height);
+				
+				// Calculate the center of the focus point
+				const centerX = this._imageUploadFocusPoint.x * this._imageUploadCanvas.width;
+				const centerY = this._imageUploadFocusPoint.y * this._imageUploadCanvas.height;
+				const radius = 10;
+				
+				// Draw the white circle
+				this._imageUploadCanvasContext.beginPath();
+				this._imageUploadCanvasContext.arc(centerX, centerY, radius + 4, 0, 2 * Math.PI);
+				this._imageUploadCanvasContext.fillStyle = 'white';
+				this._imageUploadCanvasContext.fill();
+				
+				// Draw the black cross
+				this._imageUploadCanvasContext.strokeStyle = 'black';
+				this._imageUploadCanvasContext.lineWidth = 1.5;
+				
+				// Horizontal line
+				this._imageUploadCanvasContext.beginPath();
+				this._imageUploadCanvasContext.moveTo(centerX - radius, centerY);
+				this._imageUploadCanvasContext.lineTo(centerX + radius, centerY);
+				this._imageUploadCanvasContext.stroke();
+				
+				// Vertical line
+				this._imageUploadCanvasContext.beginPath();
+				this._imageUploadCanvasContext.moveTo(centerX, centerY - radius);
+				this._imageUploadCanvasContext.lineTo(centerX, centerY + radius);
+				this._imageUploadCanvasContext.stroke();
+			},
+			
+			displayPlaceholder: function()
+			{
+				this._imageUploadPlaceholder.classList.remove('hidden');
+			},
+			
+			resetFocusPoint: function()
+			{
+				// Reset focus point to center
+				this._imageUploadFocusPoint = {
+					x: 0.5,
+					y: 0.5
+				};
+				
+				// Redraw the image with reset focus point
+				this.drawImageWithFocusPoint();
+				
+				// Hide the reset button since focus point is back to default
+				this._imageUploadButtonResetFocusPoint.classList.add('hidden');
+			},
+			
+			removeImage: function()
+			{
+				// 1. clear canvas
+				this._imageUploadCanvasContext.clearRect(0, 0, this._imageUploadCanvas.width, this._imageUploadCanvas.height);
+				
+				// 2. show placeholder
+				this._imageUploadPlaceholder.classList.remove('hidden');
+				
+				// 3. hide buttons
+				this._imageUploadButtonRemoveImage.classList.add('hidden');
+				this._imageUploadButtonResetFocusPoint.classList.add('hidden');
+				
+				// 4. instruct template
+				this._imageUploadNode.getRoot().view.Mimoto.ui.setLocalVar('bIsReadyForStorage', (this._imageUploadOriginalPreview !== null));
+				this._imageUploadNode.getRoot().view.Mimoto.ui.setLocalVar('bRemoveImage', (this._imageUploadOriginalPreview !== null));
+			},
+			
+			drawImageWithFocusPoint: function()
+			{
+				// Clear canvas
+				this._imageUploadCanvasContext.clearRect(0, 0, this._imageUploadCanvas.width, this._imageUploadCanvas.height);
+				
+				// Draw image
+				this._imageUploadCanvasContext.drawImage(this._imageUploadPreview, 0, 0, this._imageUploadCanvas.width, this._imageUploadCanvas.height);
+				
+				// Draw focus point
+				this.drawFocusPoint();
+			},
+			
+			uploadImage: async function()
+			{
+				return new Promise(async (resolve, reject) => {
+					
+					const file = this._imageUploadInput.files[0];
+					if (!file)
+					{
+						let imageData = {
+							meta: {
+								path: this._imageUploadOriginalImagePath,
+								focusPoint: this._imageUploadFocusPoint,
+								export: {
+									sizes: this._imageExportSizes
+								}
+							},
+							original: this._imageUploadOriginalPreview
+						};
+						
+						resolve(imageData);
+						
+						return;
+					}
+					
+					try
+					{
+						
+						
+						const extension = file.name.substring(file.name.lastIndexOf('.'));
+						
+						// Create a storage reference with the new file name
+						const storageRef = window.Mimoto.firebase.storage.storageRef(window.Mimoto.data.internal.storage(), this._imageUploadOriginalImagePath + `/original${extension}`);
+						
+						// Upload the file with metadata
+						const snapshot = await window.Mimoto.firebase.storage.uploadBytesResumable(storageRef, file);
+						// Mimoto.log(`Uploaded ${snapshot.totalBytes} bytes successfully!`);
+						
+						// Get the download URL
+						const downloadURL = await window.Mimoto.firebase.storage.getDownloadURL(storageRef);
+						
+						let imageData = {
+							meta: {
+								path: this._imageUploadOriginalImagePath,
+								name: file.name,
+								focusPoint: this._imageUploadFocusPoint,
+								export: {
+									sizes: this._imageExportSizes
+								}
+							},
+							original: downloadURL
+						};
+						
+						resolve(imageData);
+						
+					}
+					catch (error)
+					{
+						Mimoto.error("Error during upload process:", error);
+						reject(error);
+					}
+					
+				});
+				
+			}
+		}
+	</script>
+
+</dialog>
+<!-- Template: UploadImageDialog - END -->
