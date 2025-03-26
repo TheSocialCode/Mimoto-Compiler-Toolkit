@@ -132,25 +132,33 @@ class Startup
 
 					case 'components':
 
-						// check if args 0 en 1 gezet en exist?
 						const componentInstaller = new InstallComponents();
 						await componentInstaller.install();
 
 						break;
 
 					case 'update':
+						// Ask for confirmation before updating
+						const inquirer = await Utils.getInquirer();
+						const { shouldUpdate } = await inquirer.prompt([{
+							type: 'confirm',
+							name: 'shouldUpdate',
+							message: 'Do you want to update to the latest Mimoto.js?',
+							default: true
+						}]);
 
-						// 5. distribute Mimoto.js
-						let mimotoDistributor = new DistributeMimoto(config);
+						if (shouldUpdate) {
+							// 5. distribute Mimoto.js
+							const mimotoDistributor = new DistributeMimoto();
+							// 6. distribute
+							mimotoDistributor.distribute(Utils.getProjectRoot());
 
-						// 6. distribute
-						mimotoDistributor.distribute(sTargetDir);
-
+						} else {
+							console.log('Update cancelled.');
+						}
 						break;
 
 					case 'compile':
-
-
 
 					// mimoto run
 
