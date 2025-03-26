@@ -74,7 +74,9 @@ class DistributeMimoto
 					// II. report
 					console.log(`┌───`);
 					console.log(`│`);
-					console.log(`│   🌱 - \x1b[1mMimoto\x1b[0m 💬 - The latest Mimoto.js has been added to the project!`);
+					console.log(`│   🌱 - \x1b[1mMimoto\x1b[0m 💬 - The latest Mimoto.js`);
+					console.log(`│                    has been added to`);
+					console.log(`│                    the project!`);
 					console.log(`│`);
 					console.log(`└───`);
 
