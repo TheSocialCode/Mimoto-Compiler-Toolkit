@@ -1,6 +1,6 @@
 {
     "name": "mimoto",
-    "version": "1.0.74",
+    "version": "1.0.76",
     "description": "Mimoto - Compiler & Toolkit",
     "license": "MIT",
     "author": "Sebastian Kersten (sebastian@thesocialcode.com)",
@@ -20,7 +20,8 @@
         "inquirer": "^11.1.0",
         "jsdom": "^25.0.1",
         "openai": "^4.24.1",
-        "uniqid": "^5.4.0"
+        "uniqid": "^5.4.0",
+        "sharp": "^0.34.1"
     },
     "repository": {
         "type": "git",

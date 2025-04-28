@@ -208,58 +208,81 @@ class ImageExporter
 		const focalX = imageFocusPoint.x;
 		const focalY = imageFocusPoint.y;
 
-		const originalImage = sharp(tempFilePath); // Use the original image path for input
-		const metadata = await originalImage.metadata();
+		const originalImageSharp = sharp(tempFilePath); // Use the original image path for input
+		const metadata = await originalImageSharp.metadata();
 
-		//const [width, height] = imageSize.split('x').map(Number);
-		const width = imageSize.width;
-		const height = imageSize.height;
+		const originalWidth = metadata.width;
+		const originalHeight = metadata.height;
+		const originalAspectRatio = originalWidth / originalHeight;
 
-		// Calculate aspect ratios
-		const aspectRatio = width / height;
-		const imageAspectRatio = metadata.width / metadata.height;
+		let targetWidth = imageSize.width;
+		let targetHeight = imageSize.height;
 
 		let resizeWidth, resizeHeight;
+		let needsCrop = false;
+		let cropDetails = {};
 
-		// Determine resize dimensions to fit the image within the target size
-		if (imageAspectRatio > aspectRatio) {
-			// Image is wider than the target aspect ratio
-			resizeWidth = Math.round(height * imageAspectRatio);
-			resizeHeight = height;
-		} else {
-			// Image is taller than the target aspect ratio
-			resizeWidth = width;
-			resizeHeight = Math.round(width / imageAspectRatio);
+		if (targetWidth > 0 && targetHeight > 0) {
+			// --- Logic for fixed dimensions (Resize to cover, then crop) ---
+			needsCrop = true;
+			const targetAspectRatio = targetWidth / targetHeight;
+
+			// Determine resize dimensions to cover the target size
+			if (originalAspectRatio > targetAspectRatio) {
+				// Original image is wider than the target aspect ratio
+				resizeWidth = Math.round(targetHeight * originalAspectRatio);
+				resizeHeight = targetHeight;
+			} else {
+				// Original image is taller than or equal to the target aspect ratio
+				resizeWidth = targetWidth;
+				resizeHeight = Math.round(targetWidth / originalAspectRatio);
+			}
+
+			// Calculate crop details relative to the *resized* image dimensions
+			const cropWidth = targetWidth; // Final width is the target width
+			const cropHeight = targetHeight; // Final height is the target height
+
+			// Calculate crop origin (top-left corner) based on the resized image dimensions
+			const cropX = Math.max(0, Math.min(resizeWidth - cropWidth, Math.floor((focalX * resizeWidth) - cropWidth / 2)));
+			const cropY = Math.max(0, Math.min(resizeHeight - cropHeight, Math.floor((focalY * resizeHeight) - cropHeight / 2)));
+
+			cropDetails = { left: cropX, top: cropY, width: cropWidth, height: cropHeight };
+
+		} else if (targetWidth > 0 && targetHeight === 0) {
+			// --- Resize by width, maintaining aspect ratio ---
+			resizeWidth = targetWidth;
+			resizeHeight = Math.round(targetWidth / originalAspectRatio);
+			needsCrop = false;
+
+		} else if (targetWidth === 0 && targetHeight > 0) {
+			// --- Resize by height, maintaining aspect ratio ---
+			resizeHeight = targetHeight;
+			resizeWidth = Math.round(targetHeight * originalAspectRatio);
+			needsCrop = false;
+
+		} else { // targetWidth === 0 && targetHeight === 0
+			// --- Use original dimensions (no resize) ---
+			resizeWidth = originalWidth;
+			resizeHeight = originalHeight;
+			needsCrop = false;
 		}
 
-		// Resize the image
-		const tempResizedPath = path.join(os.tmpdir(), `${filePathWithoutExtension}/${imageSize.name}${extension}`); // Ensure a different path for resized image
 
-		// Ensure the directory exists
-		await fs.mkdir(path.dirname(tempResizedPath), { recursive: true });
+		// --- Process Image ---
+		const finalProcessedPath = path.join(os.tmpdir(), `${filePathWithoutExtension}/${imageSize.name}-final${extension}`); // Path for the final output image
+		await fs.mkdir(path.dirname(finalProcessedPath), { recursive: true }); // Ensure directory exists
 
-		await originalImage
-			.resize(resizeWidth, resizeHeight)
-			.toFile(tempResizedPath);
+		let sharpProcessor = originalImageSharp.resize(resizeWidth, resizeHeight); // Start processing chain with resize
 
-		// Re-open the resized image for cropping
-		const resizedImage = sharp(tempResizedPath);
-		const resizedMetadata = await resizedImage.metadata();
+		if (needsCrop) {
+			sharpProcessor = sharpProcessor.extract(cropDetails); // Add crop operation if needed
+		}
 
-		// Calculate crop dimensions
-		const cropWidth = Math.min(width, resizedMetadata.width);
-		const cropHeight = Math.min(height, resizedMetadata.height);
+		await sharpProcessor.toFile(finalProcessedPath); // Write the final image to the temporary path
 
-		const cropX = Math.max(0, Math.min(resizedMetadata.width - cropWidth, Math.floor((focalX * resizedMetadata.width) - cropWidth / 2)));
-		const cropY = Math.max(0, Math.min(resizedMetadata.height - cropHeight, Math.floor((focalY * resizedMetadata.height) - cropHeight / 2)));
 
-		// Crop the image
-		const finalResizedPath = path.join(os.tmpdir(), `${filePathWithoutExtension}/${imageSize.name}-final${extension}`); // Ensure a different path for final output
-		await resizedImage
-			.extract({ left: cropX, top: cropY, width: cropWidth, height: cropHeight })
-			.toFile(finalResizedPath); // Use a different path for output
-
-		await bucket.upload(finalResizedPath, {
+		// --- Upload the processed image ---
+		await bucket.upload(finalProcessedPath, { // Upload from the final processed temporary path
 			destination: resizedPath,
 			metadata: {
 				contentType: `image/${extension.slice(1)}`,
@@ -269,9 +292,8 @@ class ImageExporter
 			}
 		});
 
-		// Get the file reference
+		// Get the file reference and set metadata
 		const file = bucket.file(resizedPath);
-
 		await file.setMetadata({
 			contentType: `image/${extension.slice(1)}`,
 			metadata: {
@@ -329,7 +351,8 @@ class ImageExporter
 			// Extract the file path from the current URL
 			const currentFilePath = this._extractFileName(currentUrl, isEmulator, bucket);
 
-			if (currentFilePath) {
+			// Avoid deleting the file we just uploaded if the URL points to the same path
+			if (currentFilePath && currentFilePath !== resizedPath) { 
 				// Delete the existing file from the storage bucket
 				const currentFile = bucket.file(currentFilePath);
 
@@ -353,25 +376,25 @@ class ImageExporter
 		// Set the new URL in the Realtime Database
 		await this._realtimeDatabase.ref(imageExportDestination).set(url);
 
-		// Update the image path in the database
 
+		// --- Clean up temporary files ---
 		try {
-			// Check if the file exists before attempting to delete
+			// Delete the original downloaded file
 			await fs.access(tempFilePath);
 			await fs.unlink(tempFilePath);
 		} catch (error) {
 			if (error.code !== 'ENOENT') {
-				console.error(`Error deleting file ${tempFilePath}:`, error);
+				console.error(`Error deleting original temp file ${tempFilePath}:`, error);
 			}
 		}
 
 		try {
-			// Check if the resized file exists before attempting to delete
-			await fs.access(tempResizedPath);
-			await fs.unlink(tempResizedPath);
+			// Delete the final processed temporary file
+			await fs.access(finalProcessedPath); 
+			await fs.unlink(finalProcessedPath);
 		} catch (error) {
 			if (error.code !== 'ENOENT') {
-				console.error(`Error deleting file ${tempResizedPath}:`, error);
+				console.error(`Error deleting final processed temp file ${finalProcessedPath}:`, error);
 			}
 		}
 	}
