@@ -106,28 +106,39 @@ class ImageExporter
 			// console.log('metaBefore =', metaBefore);
 
 
-			// Only proceed if we have both imageOriginal and imageFocusPoint
-			if (!meta.path || !meta.focusPoint) return null;
+			// Only proceed if we have path, focusPoint, and name
+			if (!meta || !meta.path || !meta.focusPoint || !meta.name) {
+				console.log('ℹ️ - ImageExporter: Missing meta data (path, focusPoint, or name). Skipping.', meta);
+				return null;
+			}
 
-			// validate or exit
-			if (!meta.export || !meta.export.sizes) return null;
+
+			// validate export configuration exists
+			if (!meta.export || !meta.export.sizes) {
+				console.log('ℹ️ - ImageExporter: Missing export sizes configuration. Skipping.', meta.export);
+				return null;
+			}
+
+			// Calculate previous extension safely
+			const previousExtension = (metaBefore && metaBefore.name) ? path.extname(metaBefore.name) : null;
+			const currentExtension = path.extname(meta.name);
 			
 			for (const sSizeName in meta.export.sizes)
 			{
 				const [width, height] = meta.export.sizes[sSizeName].split('x').map(Number);
 
-				// Create image processing request in Firestore
+				// Create image processing request
 				const exportRequest = {
 					image: {
 						focusPoint: meta.focusPoint,
-						originalFile: meta.path + '/original' + path.extname(meta.name), // TODO - STORE previous extension
+						originalFile: meta.path + '/original' + currentExtension,
 						size: {
 							name: sSizeName,
 							width: width,
 							height: height
 						},
 						exportDestination: meta.path + '/' + sSizeName,
-						previousExtension: (metaBefore) ? path.extname(metaBefore.name) : null
+						previousExtension: previousExtension
 					},
 					status: 'todo'
 				};
@@ -142,12 +153,16 @@ class ImageExporter
 			}
 
 			// Remove original if extension changed
-			if (metaBefore && path.extname(meta.name) !== path.extname(metaBefore.name)) {
-				const originalPath = meta.path + '/original' + path.extname(metaBefore.name);
+			if (metaBefore && metaBefore.name && currentExtension !== previousExtension) {
+				const originalPath = meta.path + '/original' + previousExtension;
 				// Delete from Storage instead of Realtime Database
 				const bucket = classRoot._admin.storage().bucket();
 				await bucket.file(originalPath).delete().catch(error => {
-					console.error(`Error deleting original file ${originalPath}:`, error);
+					if (error.code !== 404) {
+						console.error(`Error deleting previous original file ${originalPath}:`, error);
+					} else {
+						console.log(`Previous original file ${originalPath} not found for deletion (normal if extension changed).`);
+					}
 				});
 			}
 
