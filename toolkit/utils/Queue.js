@@ -81,6 +81,7 @@ class Queue
 			onDoing: config.onDoing || null,
 			onDone: config.onDone || null,
 			onFinish: config.onFinish || null,
+			onError: config.onError || null,
 			autoRemove: (config.autoRemove === true)
 		}
 
@@ -93,15 +94,15 @@ class Queue
 		// 7. select
 		switch(bHasController)
 		{
-			case true:
+			// case true:
 
-				// a. use a central controller data path to manage the queue
-				return this._functions.region(this._sRegion).database.ref(this._queues[sQueueID].controller).onWrite(async (snapshot, context) => {
+			// 	// a. use a central controller data path to manage the queue
+			// 	return this._functions.region(this._sRegion).database.ref(this._queues[sQueueID].controller).onWrite(async (snapshot, context) => {
 
-					// I. run
-					await classRoot._runQueue(sQueueID);
+			// 		// I. run
+			// 		await classRoot._runQueue(sQueueID);
 
-				});
+			// 	});
 
 			case false:
 			default:
@@ -248,24 +249,64 @@ class Queue
 		// Process items one by one
 		for (const item of itemsToProcess) {
 
-			if (this._queues[sQueueID].onDoing)
-			{
-				await this._queues[sQueueID].onDoing(item, item.id);
+			try {
+				if (this._queues[sQueueID].onDoing)
+				{
+					await this._queues[sQueueID].onDoing(item, item.id);
+				}
+
+				// Always release the lock, regardless of success or failure
+				await this.releaseLock(sQueueID);
+
+				// If onDoing succeeded, update status to 'done'
+				await queueItemsRef.child(item.id).update({
+					[this._queues[sQueueID].statusProperty]: this._queues[sQueueID].states.done
+				});
+
+				// Call onDone if configured
+				if (this._queues[sQueueID].onDone) {
+					await this._queues[sQueueID].onDone(item, item.id);
+				}
+
+				// Auto remove if configured
+				if (this._queues[sQueueID].autoRemove)
+				{
+					await queueItemsRef.child(item.id).remove();
+				}
+
+			} catch (error) {
+				console.error(`Error processing item ${item.id}:`, error);
+
+				// Always release the lock, regardless of success or failure
+				await this.releaseLock(sQueueID);
+
+				try {
+				   // Attempt to update status to 'error' and store the error
+				   await queueItemsRef.child(item.id).update({
+					   [this._queues[sQueueID].statusProperty]: this._queues[sQueueID].states.error,
+					   error: error.message || error.toString() // Store error message
+				   });
+				} catch (updateError) {
+					 console.error(`Failed to update item ${item.id} status to error:`, updateError);
+				}
+
+				// Call onError if configured
+				if (this._queues[sQueueID].onError) {
+					try {
+						await this._queues[sQueueID].onError(error, item, item.id);
+					} catch (onErrorError) {
+						console.error(`Error executing onError callback for item ${item.id}:`, onErrorError);
+					}
+				}
+
 			}
+			// finally {
 
+			// 	console.log('✅ ✅ ✅ ✅ ✅ ✅ ✅ Releasing lock... NEXT NEXT NEXT');
 
-			await this.releaseLock(sQueueID);
-
-			// After processing, update the status to 'done'
-			await queueItemsRef.child(item.id).update({
-				[this._queues[sQueueID].statusProperty]: this._queues[sQueueID].states.done
-			});
-
-			if (this._queues[sQueueID].autoRemove)
-			{
-				await queueItemsRef.child(item.id).remove();
-			}
-
+			// 	// Always release the lock, regardless of success or failure
+			// 	await this.releaseLock(sQueueID);	
+			// }
 		}
 	}
 
@@ -273,11 +314,23 @@ class Queue
 	{
 		const result = await this._realtimeDatabase.ref(this._queues[sQueueID].controller).transaction((current) =>
 		{
-			const now = Date.now();
-			if (!current || !current.locked || now - current.timestamp > 30000)
+			const nowTimestamp = Date.now();
+			const nowDate = new Date(nowTimestamp); // Create a Date object for formatting
+
+			if (!current || !current.locked || nowTimestamp - current.timestamp > 30000)
 			{
-				return { locked: true, lockedBy: 'function-instance', timestamp: now };
+				// Format the date as YYYY.mm.dd H:i:s
+				const year = nowDate.getFullYear();
+				const month = String(nowDate.getMonth() + 1).padStart(2, '0');
+				const day = String(nowDate.getDate()).padStart(2, '0');
+				const hours = String(nowDate.getHours()).padStart(2, '0');
+				const minutes = String(nowDate.getMinutes()).padStart(2, '0');
+				const seconds = String(nowDate.getSeconds()).padStart(2, '0');
+				const formattedStartedAt = `${year}.${month}.${day} ${hours}:${minutes}:${seconds}`;
+
+				return { locked: true, lockedBy: 'function-instance', timestamp: nowTimestamp, startedAt: formattedStartedAt };
 			}
+			// Abort the transaction if the lock is already held and hasn't expired
 			return;
 		});
 
