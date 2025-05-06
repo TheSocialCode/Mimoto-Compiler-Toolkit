@@ -154,6 +154,14 @@
 						this._imageUploadButtonResetFocusPoint.classList.remove('hidden');
 					});
 					
+					if (this._imageUploadFocusPoint.x !== 0.5 || this._imageUploadFocusPoint.y !== 0.5) {
+						// Show the reset button since focus point is not at the center
+						this._imageUploadButtonResetFocusPoint.classList.remove('hidden');
+					} else {
+						// Hide the reset button since focus point is at the center
+						this._imageUploadButtonResetFocusPoint.classList.add('hidden');
+					}
+					
 					// Show the remove image button since an image is loaded
 					this._imageUploadButtonRemoveImage.classList.remove('hidden');
 					

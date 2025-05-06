@@ -359,12 +359,6 @@ class ImageExporter
 		}
 
 		const url = await getViewURL(bucket, resizedPath);
-		// const url = isEmulator
-		// 	? `http://localhost:9012/v0/b/${bucket.name}/o/${encodeURIComponent(resizedPath)}?alt=media`
-		// 	: await getViewURL(bucket, resizedPath);
-
-		// console.log('View URL:', url);
-
 
 		// Get the current URL from the exportDestination
 		const currentUrlSnapshot = await this._realtimeDatabase.ref(imageExportDestination).once('value');
@@ -393,9 +387,6 @@ class ImageExporter
 				}
 			}
 		}
-
-		// console.log('url =', url);
-
 
 		// Set the new URL in the Realtime Database
 		await this._realtimeDatabase.ref(imageExportDestination).set(url);
