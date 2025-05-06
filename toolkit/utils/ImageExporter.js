@@ -8,6 +8,8 @@
 const path = require('path');
 const os = require('os');
 const fs = require('fs').promises;
+// const axios = require('axios');
+const mime = require('mime-types');
 
 // 2. import 3rd party SDKs
 const sharp = require('sharp');
@@ -103,7 +105,8 @@ class ImageExporter
 			const meta = snapshot.after.val();
 			const metaBefore = snapshot.before.val();
 
-			// console.log('metaBefore =', metaBefore);
+			console.log('metaBefore =', metaBefore);
+			console.log('meta =', meta);
 
 
 			// Only proceed if we have path, focusPoint, and name
@@ -121,8 +124,14 @@ class ImageExporter
 
 			// Calculate previous extension safely
 			const previousExtension = (metaBefore && metaBefore.name) ? path.extname(metaBefore.name) : null;
-			const currentExtension = path.extname(meta.name);
-			
+			let currentExtension = path.extname(meta.name);
+
+			// if (!currentExtension) currentExtension = await getImageExtensionFromUrl();
+
+
+			console.log('previousExtension =', previousExtension);
+			console.log('currentExtension =', currentExtension);
+
 			for (const sSizeName in meta.export.sizes)
 			{
 				const [width, height] = meta.export.sizes[sSizeName].split('x').map(Number);
@@ -143,10 +152,10 @@ class ImageExporter
 					status: 'todo'
 				};
 
-				// console.log('');
-				// console.log('💞 exportRequest =', exportRequest);
-				// console.log('');
-				// console.log('');
+				console.log('');
+				console.log('💞 exportRequest =', exportRequest);
+				console.log('');
+				console.log('');
 
 				// Add to Realtime Database to trigger image processing
 				await classRoot._realtimeDatabase.ref(config.exportDataPath).push(exportRequest);
@@ -172,7 +181,7 @@ class ImageExporter
 
 	async exportImage(data, key = null)
 	{
-		// console.log('🌱🌱🌱 - handleImageExportRequest - data:', data);
+		console.log('🌱🌱🌱 - handleImageExportRequest - data:', data);
 
 
 		// handleImageExportRequest - data: {
@@ -447,6 +456,40 @@ class ImageExporter
 		const sFullPath = pathname;
 		return sFullPath;
 	}
+
+	//
+	// async getImageExtensionFromUrl(imageUrl) {
+	// 	try {
+	// 		// Try HEAD request first (lighter)
+	// 		let response;
+	// 		try {
+	// 			response = await axios.head(imageUrl, { maxRedirects: 5 });
+	// 		} catch (err) {
+	// 			if (err.response && err.response.status === 405) {
+	// 				// Some servers don't allow HEAD; fall back to GET
+	// 				response = await axios.get(imageUrl, {
+	// 					maxRedirects: 5,
+	// 					responseType: 'stream', // prevents full image download
+	// 				});
+	// 			} else {
+	// 				throw err;
+	// 			}
+	// 		}
+	//
+	// 		const contentType = response.headers['content-type']; // e.g. "image/jpeg"
+	// 		const extension = mime.extension(contentType);        // e.g. "jpg"
+	//
+	// 		if (!extension) {
+	// 			throw new Error(`Could not determine extension from content-type: ${contentType}`);
+	// 		}
+	//
+	// 		return extension;
+	//
+	// 	} catch (error) {
+	// 		console.error(`Error getting extension for ${imageUrl}:`, error.message);
+	// 		throw error;
+	// 	}
+	// }
 
 }
 

@@ -294,24 +294,68 @@
 					
 					try
 					{
+						// Get the MIME type and determine a suitable extension
+						const contentType = file.type;
+						const typeSpecificPart = contentType.split('/')[1];
+						let chosenExtension;
 						
+						// Try to get a specific extension from MIME type
+						if (typeSpecificPart && typeSpecificPart.trim() !== '' && typeSpecificPart.toLowerCase() !== 'octet-stream') {
+							chosenExtension = typeSpecificPart;
+						} else {
+							// If MIME type didn't provide a specific one, try from filename
+							const nameParts = file.name.split('.');
+							if (nameParts.length > 1) {
+								const lastPart = nameParts.pop(); // Get part after the last dot
+								if (lastPart && lastPart.trim() !== '') {
+									chosenExtension = lastPart;
+								} else {
+									chosenExtension = 'bin'; // Handle cases like "filename."
+								}
+							} else {
+								chosenExtension = 'bin'; // No extension in filename
+							}
+						}
 						
-						const extension = file.name.substring(file.name.lastIndexOf('.'));
+						const extension = '.' + chosenExtension.toLowerCase();
 						
-						// Create a storage reference with the new file name
+						// Create a storage reference with the new file name using the derived extension
 						const storageRef = window.Mimoto.firebase.storage.storageRef(window.Mimoto.data.internal.storage(), this._imageUploadOriginalImagePath + `/original${extension}`);
 						
+						// Optional: Include content type in upload metadata if your storage provider supports it
+						const metadata = {
+							contentType: contentType
+						};
+						
 						// Upload the file with metadata
-						const snapshot = await window.Mimoto.firebase.storage.uploadBytesResumable(storageRef, file);
+						const snapshot = await window.Mimoto.firebase.storage.uploadBytesResumable(storageRef, file, metadata);
 						// Mimoto.log(`Uploaded ${snapshot.totalBytes} bytes successfully!`);
 						
 						// Get the download URL
 						const downloadURL = await window.Mimoto.firebase.storage.getDownloadURL(storageRef);
 						
+						let finalFileName = file.name;
+						if (!finalFileName.toLowerCase().endsWith(extension)) {
+							// Remove existing extension if present and different, then add the new one
+							const nameParts = finalFileName.split('.');
+							if (nameParts.length > 1) {
+								const existingExt = '.' + nameParts.pop().toLowerCase();
+								if (existingExt !== extension) {
+									finalFileName = nameParts.join('.'); // Reconstruct name without old extension
+								} else {
+									// Already has the correct extension
+									finalFileName = file.name; // Use original name with correct casing
+								}
+							}
+							if (!finalFileName.toLowerCase().endsWith(extension)) {
+								finalFileName += extension;
+							}
+						}
+						
 						let imageData = {
 							meta: {
 								path: this._imageUploadOriginalImagePath,
-								name: file.name,
+								name: finalFileName,
 								focusPoint: this._imageUploadFocusPoint,
 								export: {
 									sizes: this._imageExportSizes
