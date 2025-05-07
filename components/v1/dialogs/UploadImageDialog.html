@@ -342,23 +342,18 @@
 						// Get the download URL
 						const downloadURL = await window.Mimoto.firebase.storage.getDownloadURL(storageRef);
 						
-						let finalFileName = file.name;
-						if (!finalFileName.toLowerCase().endsWith(extension)) {
-							// Remove existing extension if present and different, then add the new one
-							const nameParts = finalFileName.split('.');
-							if (nameParts.length > 1) {
-								const existingExt = '.' + nameParts.pop().toLowerCase();
-								if (existingExt !== extension) {
-									finalFileName = nameParts.join('.'); // Reconstruct name without old extension
-								} else {
-									// Already has the correct extension
-									finalFileName = file.name; // Use original name with correct casing
-								}
-							}
-							if (!finalFileName.toLowerCase().endsWith(extension)) {
-								finalFileName += extension;
-							}
+						// Construct finalFileName ensuring lowercase extension
+						// The 'extension' variable (e.g., ".jpg") is already guaranteed to be lowercase
+						// from its own definition: const extension = '.' + chosenExtension.toLowerCase();
+						const originalFileName = file.name;
+						const lastDotIndex = originalFileName.lastIndexOf('.');
+						let baseFileName;
+						if (lastDotIndex === -1) {
+							baseFileName = originalFileName; // No extension in original filename
+						} else {
+							baseFileName = originalFileName.substring(0, lastDotIndex); // Name before the last dot
 						}
+						const finalFileName = baseFileName + extension;
 						
 						let imageData = {
 							meta: {
