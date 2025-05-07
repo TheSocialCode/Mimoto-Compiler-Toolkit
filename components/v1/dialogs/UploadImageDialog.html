@@ -63,6 +63,7 @@
 			_imageUploadButtonResetFocusPoint: null,
 			_imageUploadButtonRemoveImage: null,
 			_imageUploadNode: null,
+			_imageUploadData: null,
 			
 			_imageUploadOriginalImagePath: null,
 			_imageUploadOriginalFocusPoint: null,
@@ -77,6 +78,7 @@
 			{
 				// store
 				this._imageUploadNode = node;
+				this._imageUploadData = image;
 				
 				this._imageUploadOriginalImagePath = sImagePath;
 				this._imageUploadOriginalFocusPoint = image?.meta?.focusPoint;
@@ -286,6 +288,7 @@
 					{
 						let imageData = {
 							meta: {
+								name: this._imageUploadData?.meta?.name,
 								path: this._imageUploadOriginalImagePath,
 								focusPoint: this._imageUploadFocusPoint,
 								export: {

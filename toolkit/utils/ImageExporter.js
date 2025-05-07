@@ -181,7 +181,7 @@ class ImageExporter
 
 	async exportImage(data, key = null)
 	{
-		console.log('🌱🌱🌱 - handleImageExportRequest - data:', data);
+		// console.log('🌱🌱🌱 - handleImageExportRequest - data:', data);
 
 
 		// handleImageExportRequest - data: {
